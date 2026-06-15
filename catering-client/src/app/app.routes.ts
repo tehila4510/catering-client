@@ -1,3 +1,80 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
-export const routes: Routes = [];
+export const routes: Routes = [
+  { path: '', redirectTo: 'home', pathMatch: 'full' },
+
+  // Public routes
+  {
+    path: 'home',
+    loadComponent: () =>
+      import('./features/home/home.component').then((m) => m.HomeComponent),
+  },
+  {
+    path: 'dishes',
+    loadComponent: () =>
+      import('./features/dishes/dish-list/dish-list.component').then(
+        (m) => m.DishListComponent,
+      ),
+  },
+  {
+    path: 'packages',
+    loadComponent: () =>
+      import('./features/packages/package-list/package-list.component').then(
+        (m) => m.PackageListComponent,
+      ),
+  },
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/auth/login/login.component').then(
+        (m) => m.LoginComponent,
+      ),
+  },
+  {
+    path: 'register',
+    loadComponent: () =>
+      import('./features/auth/register/register.component').then(
+        (m) => m.RegisterComponent,
+      ),
+  },
+
+  // Protected routes
+  {
+    path: 'profile',
+    loadComponent: () =>
+      import('./features/profile/profile.component').then(
+        (m) => m.ProfileComponent,
+      ),
+    canActivate: [authGuard],
+  },
+
+  // Admin routes
+  {
+    path: 'admin',
+    loadComponent: () =>
+      import('./features/admin/admin-dashboard/admin-dashboard.component').then(
+        (m) => m.AdminDashboardComponent,
+      ),
+    canActivate: [authGuard, adminGuard],
+    children: [
+      {
+        path: 'dishes',
+        loadComponent: () =>
+          import('./features/dishes/dish-form/dish-form.component').then(
+            (m) => m.DishFormComponent,
+          ),
+      },
+      {
+        path: 'packages',
+        loadComponent: () =>
+          import(
+            './features/packages/package-form/package-form.component'
+          ).then((m) => m.PackageFormComponent),
+      },
+    ],
+  },
+
+  { path: '**', redirectTo: 'home' },
+];
