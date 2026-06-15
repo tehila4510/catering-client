@@ -1,0 +1,124 @@
+$gold: #c9a84c;
+$gold-light: #e8d5a3;
+$gold-dark: #a07830;
+$black: #111111;
+$black-soft: #1e1e1e;
+$white: #f9f9f9;
+$white-dim: #e0e0e0;
+$gray: #5c5c5c;
+
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $black;
+  padding: 1.5rem;
+}
+
+.auth-card {
+  background-color: $black-soft;
+  border: 1px solid rgba($gold, 0.3);
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+.auth-title {
+  font-family: 'Playfair Display', serif;
+  color: $gold;
+  font-size: 1.8rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  color: $white-dim;
+  font-size: 0.875rem;
+  margin-bottom: 0.4rem;
+  text-align: right;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: $black;
+  border: 1px solid rgba($gold, 0.25);
+  border-radius: 8px;
+  color: $white;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  text-align: right;
+  direction: rtl;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: $gray;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $gold;
+    box-shadow: 0 0 0 3px rgba($gold, 0.2);
+  }
+}
+
+.error-msg {
+  color: #e05c5c;
+  font-size: 0.875rem;
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 0.85rem;
+  background-color: $gold;
+  color: $black;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  margin-top: 0.5rem;
+
+  &:hover:not(:disabled) {
+    background-color: $gold-dark;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.auth-link {
+  text-align: center;
+  color: $gray;
+  font-size: 0.875rem;
+  margin-top: 1.5rem;
+
+  a {
+    color: $gold-light;
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
