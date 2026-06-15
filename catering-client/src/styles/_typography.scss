@@ -1,0 +1,12 @@
+@use 'variables' as *;
+
+h1, h2, h3 { font-family: $font-display; color: $gold; }
+body { font-family: $font-body; background: $black; color: $white; }
+
+.gold-text  { color: $gold; }
+.label-caps {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $gray;
+}

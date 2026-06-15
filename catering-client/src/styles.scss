@@ -1,1 +1,62 @@
-/* You can add global styles to this file, and also import other style files */
+@use 'styles/variables' as *;
+@use 'styles/typography';
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+// Buttons
+.btn-primary {
+  background: $gold;
+  color: $black;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: $radius-sm;
+  font-family: $font-body;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover { background: $gold-dark; }
+}
+
+.btn-secondary {
+  background: transparent;
+  color: $gold;
+  border: 1px solid $gold;
+  padding: 0.75rem 2rem;
+  border-radius: $radius-sm;
+  font-family: $font-body;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover { background: rgba($gold, 0.1); }
+}
+
+// Cards
+.card {
+  background: $black-soft;
+  border: 1px solid rgba($gold, 0.25);
+  border-radius: $radius-md;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+  transition: transform 0.2s, border-color 0.2s;
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: rgba($gold, 0.6);
+  }
+}
+
+// Grid
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .grid-3 { grid-template-columns: 1fr; }
+}
