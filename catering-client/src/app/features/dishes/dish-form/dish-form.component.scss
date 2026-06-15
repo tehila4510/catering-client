@@ -1,0 +1,67 @@
+@use '../../../../styles/variables' as *;
+
+.dish-form {
+  h2 {
+    font-family: $font-display;
+    color: $gold;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label {
+    font-size: 0.85rem;
+    color: $white-dim;
+    letter-spacing: 0.03em;
+  }
+
+  input, textarea {
+    background: $black;
+    border: 1px solid rgba($gold, 0.3);
+    border-radius: $radius-sm;
+    color: $white;
+    padding: 0.65rem 0.9rem;
+    font-family: $font-body;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    resize: vertical;
+
+    &::placeholder { color: $gray; }
+    &:focus { border-color: $gold; }
+  }
+}
+
+.error-msg {
+  color: #e05555;
+  font-size: 0.875rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .form-row { grid-template-columns: 1fr; }
+}
