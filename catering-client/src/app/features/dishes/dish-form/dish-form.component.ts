@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { Dish } from '../../../core/models/dish.model';
 import { DishService } from '../dish.service';
+import { DISH_CATEGORIES } from '../../../core/constants/categories';
 
 @Component({
   selector: 'app-dish-form',
@@ -37,30 +38,20 @@ import { DishService } from '../dish.service';
             ></textarea>
           </div>
     
-          <div class="form-row">
-            <div class="form-group">
-              <label for="dish-price">מחיר (₪) *</label>
-              <input
-                id="dish-price"
-                name="price"
-                type="number"
-                [(ngModel)]="formData.price"
-                required
-                min="0"
-                placeholder="0"
-                />
-              </div>
-              <div class="form-group">
-                <label for="dish-category">קטגוריה *</label>
-                <input
-                  id="dish-category"
-                  name="category"
-                  [(ngModel)]="formData.category"
-                  required
-                  placeholder="ראשונות, עיקריות..."
-                  />
-                </div>
-              </div>
+          <div class="form-group">
+            <label for="dish-category">קטגוריה *</label>
+            <select
+              id="dish-category"
+              name="category"
+              [(ngModel)]="formData.category"
+              required
+              >
+              <option value="" disabled>בחר קטגוריה</option>
+              @for (cat of categories; track cat.value) {
+                <option [value]="cat.value">{{ cat.label }}</option>
+              }
+            </select>
+          </div>
     
               <div class="form-group">
                 <label for="dish-imageUrl">קישור לתמונה (אופציונלי)</label>
@@ -97,10 +88,11 @@ export class DishFormComponent implements OnInit {
   saving = signal(false);
   error = signal('');
 
+  readonly categories = DISH_CATEGORIES;
+
   formData: Partial<Dish> = {
     name: '',
     description: '',
-    price: 0,
     category: '',
     imageUrl: '',
   };

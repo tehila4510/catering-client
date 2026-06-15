@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { Dish } from '../../../core/models/dish.model';
 import { DishService } from '../dish.service';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
+import { categoryLabel } from '../../../core/constants/categories';
 
 @Component({
   selector: 'app-dish-detail',
@@ -28,10 +29,9 @@ import { LoaderComponent } from '../../../shared/components/loader/loader.compon
           <img [src]="d.imageUrl || fallbackImage" [alt]="d.name" />
         </div>
         <div class="detail-content">
-          <span class="badge label-caps">{{ d.category }}</span>
+          <span class="badge label-caps">{{ categoryLabel(d.category) }}</span>
           <h1>{{ d.name }}</h1>
           <p class="description">{{ d.description }}</p>
-          <p class="price gold-text">₪{{ d.price }}</p>
           <a routerLink="/dishes" class="btn-secondary">← חזרה למנות</a>
         </div>
       }
@@ -46,6 +46,8 @@ export class DishDetailComponent implements OnInit {
 
   dish = signal<Dish | null>(null);
   loading = signal(true);
+
+  readonly categoryLabel = categoryLabel;
 
   readonly fallbackImage =
     'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800';

@@ -3,6 +3,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { Dish } from '../../../core/models/dish.model';
+import { categoryLabel } from '../../../core/constants/categories';
 
 @Component({
   selector: 'app-dish-card',
@@ -16,12 +17,11 @@ import { Dish } from '../../../core/models/dish.model';
           [alt]="dish.name"
           loading="lazy"
           />
-          <span class="badge label-caps">{{ dish.category }}</span>
+          <span class="badge label-caps">{{ categoryLabel(dish.category) }}</span>
         </div>
         <div class="card-body">
           <h3>{{ dish.name }}</h3>
           <p class="description">{{ dish.description }}</p>
-          <p class="price gold-text">₪{{ dish.price }}</p>
           <div class="card-actions">
             <a class="btn-secondary btn-sm" [routerLink]="['/dishes', dish.id]">פרטים</a>
             @if (isAdmin) {
@@ -39,6 +39,8 @@ export class DishCardComponent {
   @Input() isAdmin = false;
   @Output() edited = new EventEmitter<Dish>();
   @Output() deleted = new EventEmitter<string>();
+
+  readonly categoryLabel = categoryLabel;
 
   readonly fallbackImage =
     'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800';
