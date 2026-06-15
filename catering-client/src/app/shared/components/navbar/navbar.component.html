@@ -1,0 +1,54 @@
+<nav class="navbar" dir="rtl" role="navigation" aria-label="ניווט ראשי">
+  <div class="navbar-inner">
+    <!-- Logo -->
+    <a routerLink="/home" class="navbar-logo" (click)="closeMenu()" aria-label="עמוד הבית">
+      קייטרינג
+    </a>
+
+    <!-- Hamburger (mobile) -->
+    <button
+      class="hamburger"
+      (click)="toggleMenu()"
+      [attr.aria-expanded]="menuOpen()"
+      aria-label="פתח תפריט"
+    >
+      <span class="hamburger-line" [class.open]="menuOpen()"></span>
+      <span class="hamburger-line" [class.open]="menuOpen()"></span>
+      <span class="hamburger-line" [class.open]="menuOpen()"></span>
+    </button>
+
+    <!-- Links -->
+    <ul class="nav-links" [class.open]="menuOpen()">
+      <li>
+        <a routerLink="/home" routerLinkActive="active" (click)="closeMenu()">בית</a>
+      </li>
+      <li>
+        <a routerLink="/dishes" routerLinkActive="active" (click)="closeMenu()">מנות</a>
+      </li>
+      <li>
+        <a routerLink="/packages" routerLinkActive="active" (click)="closeMenu()">חבילות</a>
+      </li>
+
+      <ng-container *ngIf="auth.isLoggedIn()">
+        <li>
+          <a routerLink="/profile" routerLinkActive="active" (click)="closeMenu()">פרופיל</a>
+        </li>
+        <li>
+          <button class="nav-logout" (click)="logout()" aria-label="יציאה מהמערכת">יציאה</button>
+        </li>
+      </ng-container>
+
+      <ng-container *ngIf="!auth.isLoggedIn()">
+        <li>
+          <a routerLink="/login" routerLinkActive="active" (click)="closeMenu()">כניסה</a>
+        </li>
+      </ng-container>
+
+      <ng-container *ngIf="auth.isAdmin()">
+        <li>
+          <a routerLink="/admin" routerLinkActive="active" class="admin-link" (click)="closeMenu()">ניהול</a>
+        </li>
+      </ng-container>
+    </ul>
+  </div>
+</nav>
