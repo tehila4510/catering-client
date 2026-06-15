@@ -1,0 +1,32 @@
+<div class="profile-wrapper">
+  <div class="profile-card" *ngIf="user() as u; else loading">
+    <h1 class="profile-title">הפרופיל שלי</h1>
+
+    <div class="profile-field">
+      <span class="field-label">אימייל:</span>
+      <span class="field-value">{{ u.email }}</span>
+    </div>
+
+    <div class="profile-field">
+      <span class="field-label">תפקיד:</span>
+      <span class="role-badge" [class.admin]="u.role === 'admin'">
+        {{ u.role === 'admin' ? 'מנהל' : 'לקוח' }}
+      </span>
+    </div>
+
+    <div class="profile-field" *ngIf="u.createdAt">
+      <span class="field-label">חבר מאז:</span>
+      <span class="field-value">
+        {{ u.createdAt | date: 'd בMMMM yyyy' : '' : 'he' }}
+      </span>
+    </div>
+
+    <button class="btn-logout" (click)="logout()" aria-label="התנתקות">
+      התנתקות
+    </button>
+  </div>
+
+  <ng-template #loading>
+    <div class="loading-state" aria-live="polite">טוען פרופיל...</div>
+  </ng-template>
+</div>
