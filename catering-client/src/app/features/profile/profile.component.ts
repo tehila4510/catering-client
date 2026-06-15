@@ -1,6 +1,6 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { NgIf, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { User } from '../../core/models/user.model';
 import { environment } from '../../../environments/environment';
@@ -8,17 +8,15 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [NgIf, DatePipe],
+  imports: [DatePipe],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
 })
 export class ProfileComponent implements OnInit {
-  user = signal<User | null>(null);
+  private http = inject(HttpClient);
+  private auth = inject(AuthService);
 
-  constructor(
-    private http: HttpClient,
-    private auth: AuthService,
-  ) {}
+  user = signal<User | null>(null);
 
   ngOnInit(): void {
     this.http

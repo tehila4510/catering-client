@@ -1,10 +1,11 @@
 <div class="toast-container" aria-live="polite" aria-atomic="false" dir="rtl">
-  <div
-    *ngFor="let toast of toastService.toasts()"
-    class="toast"
-    [ngClass]="toast.type"
-    role="alert"
-  >
-    {{ toast.message }}
-  </div>
+  @for (toast of toastService.toasts(); track toast) {
+    <div
+      class="toast"
+      [ngClass]="toast.type"
+      role="alert"
+      >
+      {{ toast.message }}
+    </div>
+  }
 </div>
