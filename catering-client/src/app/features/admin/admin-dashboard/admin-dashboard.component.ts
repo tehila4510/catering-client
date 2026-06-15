@@ -1,10 +1,42 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [RouterOutlet],
-  template: `<router-outlet></router-outlet>`,
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  template: `
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>ניהול</h2>
+        </div>
+        <nav class="sidebar-nav">
+          <a
+            routerLink="dishes"
+            routerLinkActive="active"
+            class="nav-link"
+          >
+            <span class="nav-icon">🍽</span>
+            ניהול מנות
+          </a>
+          <a
+            routerLink="packages"
+            routerLinkActive="active"
+            class="nav-link"
+          >
+            <span class="nav-icon">📦</span>
+            ניהול חבילות
+          </a>
+        </nav>
+      </aside>
+      <main class="content-area">
+        <div class="content-inner">
+          <router-outlet />
+        </div>
+      </main>
+    </div>
+  `,
+  styleUrl: './admin-dashboard.component.scss',
 })
 export class AdminDashboardComponent {}
