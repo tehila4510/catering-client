@@ -1,0 +1,55 @@
+$gold: #c9a84c;
+$black-soft: #1e1e1e;
+$white: #f9f9f9;
+
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 360px;
+}
+
+.toast {
+  padding: 0.875rem 1.25rem;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  text-align: right;
+  direction: rtl;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  animation: slideIn 0.3s ease;
+  border-right: 4px solid transparent;
+
+  &.success {
+    background-color: #1a2e1a;
+    color: #7ec87e;
+    border-right-color: #4caf50;
+  }
+
+  &.error {
+    background-color: #2e1a1a;
+    color: #e07c7c;
+    border-right-color: #e05c5c;
+  }
+
+  &.info {
+    background-color: $black-soft;
+    color: $white;
+    border-right-color: $gold;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
