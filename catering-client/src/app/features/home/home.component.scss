@@ -1,0 +1,94 @@
+@use '../../../styles/variables' as *;
+
+// ─── Hero ──────────────────────────────────────────────────────────────────
+
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(rgba(17, 17, 17, 0.65), rgba(17, 17, 17, 0.65)),
+    url('https://images.unsplash.com/photo-1555244162-803834f70033?w=1400') center / cover no-repeat;
+  text-align: center;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0 1.5rem;
+
+  h1 {
+    font-family: $font-display;
+    font-size: clamp(2.2rem, 6vw, 4.5rem);
+    color: $gold;
+    line-height: 1.15;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .subtitle {
+    font-family: $font-body;
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    color: $white-dim;
+    max-width: 540px;
+    line-height: 1.6;
+  }
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+// ─── Featured Sections ──────────────────────────────────────────────────────
+
+.featured-section {
+  padding: 5rem 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.packages-section {
+  background: rgba($black-soft, 0.5);
+  max-width: 100%;
+  padding: 5rem 0;
+
+  .section-header,
+  .featured-grid,
+  .section-footer {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+
+  h2 {
+    font-family: $font-display;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    color: $gold;
+    margin-bottom: 0.4rem;
+  }
+}
+
+.featured-grid {
+  margin-bottom: 2.5rem;
+}
+
+.section-footer {
+  text-align: center;
+}
