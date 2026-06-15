@@ -1,0 +1,95 @@
+@use '../../../../styles/variables' as *;
+
+.package-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .card-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+
+    .dish-count-badge {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: $gold;
+      color: $black;
+      padding: 0.25rem 0.6rem;
+      border-radius: $radius-sm;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+  }
+
+  &:hover .card-image img {
+    transform: scale(1.05);
+  }
+
+  .card-body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+
+    h3 {
+      font-family: $font-display;
+      font-size: 1.1rem;
+      color: $white;
+      margin: 0;
+    }
+
+    .description {
+      font-size: 0.875rem;
+      color: $white-dim;
+      line-height: 1.5;
+      flex: 1;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .price {
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+}
+
+.btn-sm {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-delete {
+  background: transparent;
+  color: #e05555;
+  border: 1px solid #e05555;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(224, 85, 85, 0.1);
+  }
+}
