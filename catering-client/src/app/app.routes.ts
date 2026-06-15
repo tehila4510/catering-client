@@ -19,10 +19,24 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'dishes/:id',
+    loadComponent: () =>
+      import('./features/dishes/dish-detail/dish-detail.component').then(
+        (m) => m.DishDetailComponent,
+      ),
+  },
+  {
     path: 'packages',
     loadComponent: () =>
       import('./features/packages/package-list/package-list.component').then(
         (m) => m.PackageListComponent,
+      ),
+  },
+  {
+    path: 'packages/:id',
+    loadComponent: () =>
+      import('./features/packages/package-detail/package-detail.component').then(
+        (m) => m.PackageDetailComponent,
       ),
   },
   {

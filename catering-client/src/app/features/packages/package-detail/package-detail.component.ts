@@ -5,6 +5,13 @@ import { RouterLink } from '@angular/router';
 import { Package } from '../../../core/models/package.model';
 import { PackageService } from '../package.service';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
+import { CATEGORY_LABELS } from '../../../core/constants/categories';
+
+interface LimitRow {
+  key: string;
+  label: string;
+  count: number;
+}
 
 @Component({
   selector: 'app-package-detail',
@@ -31,19 +38,22 @@ import { LoaderComponent } from '../../../shared/components/loader/loader.compon
           <h1>{{ p.name }}</h1>
           <p class="description">{{ p.description }}</p>
           <div class="dishes-list">
-            <h2>מנות בחבילה</h2>
+            <h2>מה כולל ההרכב</h2>
             <ul>
-              @for (dish of p.dishes; track dish) {
+              @for (row of limitRows(); track row.key) {
                 <li>
-                  <span class="dish-name">{{ dish.name }}</span>
-                  <span class="dish-price gold-text">₪{{ dish.price }}</span>
+                  <span class="dish-name">{{ row.label }}</span>
+                  <span class="dish-price gold-text">{{ row.count }} מנות</span>
                 </li>
+              } @empty {
+                <li><span class="dish-name">ההרכב ייקבע בהתאמה אישית</span></li>
               }
             </ul>
+            <p class="dishes-total label-caps">סה״כ עד {{ totalDishes() }} מנות לבחירה</p>
           </div>
           <p class="total-price">
-            <span class="label-caps">מחיר כולל</span>
-            <span class="price gold-text">₪{{ p.price }}</span>
+            <span class="label-caps">מחיר לאדם</span>
+            <span class="price gold-text">₪{{ p.pricePerPerson }}</span>
           </p>
           <a routerLink="/packages" class="btn-secondary">← חזרה לחבילות</a>
         </div>
@@ -62,6 +72,22 @@ export class PackageDetailComponent implements OnInit {
 
   readonly fallbackImage =
     'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800';
+
+  limitRows(): LimitRow[] {
+    const p = this.pkg();
+    if (!p?.limits) return [];
+    return Object.entries(p.limits)
+      .filter(([, count]) => (count ?? 0) > 0)
+      .map(([key, count]) => ({
+        key,
+        label: CATEGORY_LABELS[key] ?? key,
+        count: count ?? 0,
+      }));
+  }
+
+  totalDishes(): number {
+    return this.limitRows().reduce((sum, row) => sum + row.count, 0);
+  }
 
   ngOnInit(): void {
     this.packageService.getAll().subscribe({

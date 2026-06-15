@@ -16,12 +16,12 @@ import { Package } from '../../../core/models/package.model';
           [alt]="pkg.name"
           loading="lazy"
           />
-          <span class="dish-count-badge label-caps">{{ pkg.dishes.length }} מנות</span>
+          <span class="dish-count-badge label-caps">עד {{ totalDishes }} מנות</span>
         </div>
         <div class="card-body">
           <h3>{{ pkg.name }}</h3>
           <p class="description">{{ pkg.description }}</p>
-          <p class="price gold-text">₪{{ pkg.price }}</p>
+          <p class="price gold-text">₪{{ pkg.pricePerPerson }} <span class="per-person">לאדם</span></p>
           <div class="card-actions">
             <a class="btn-secondary btn-sm" [routerLink]="['/packages', pkg.id]">פרטים</a>
             @if (isAdmin) {
@@ -42,4 +42,17 @@ export class PackageCardComponent {
 
   readonly fallbackImage =
     'https://images.unsplash.com/photo-1530062845289-9109b2c9c868?w=800';
+
+  get totalDishes(): number {
+    const l = this.pkg?.limits;
+    if (!l) return 0;
+    return (
+      (l.starters || 0) +
+      (l.mainCourses || 0) +
+      (l.salads || 0) +
+      (l.desserts || 0) +
+      (l.breads || 0) +
+      (l.drinks || 0)
+    );
+  }
 }

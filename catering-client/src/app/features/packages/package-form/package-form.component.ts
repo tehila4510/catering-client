@@ -2,10 +2,9 @@ import { Component, Input, Output, EventEmitter, OnInit, signal, inject } from '
 import { FormsModule } from '@angular/forms';
 
 
-import { Package } from '../../../core/models/package.model';
-import { Dish } from '../../../core/models/dish.model';
+import { Package, PackageLimits } from '../../../core/models/package.model';
 import { PackageService } from '../package.service';
-import { DishService } from '../../dishes/dish.service';
+import { DISH_CATEGORIES } from '../../../core/constants/categories';
 
 @Component({
   selector: 'app-package-form',
@@ -14,7 +13,7 @@ import { DishService } from '../../dishes/dish.service';
   template: `
     <div class="package-form">
       <h2>{{ pkg ? 'עריכת חבילה' : 'הוספת חבילה חדשה' }}</h2>
-    
+
       <form (ngSubmit)="onSubmit()" class="form-body">
         <div class="form-group">
           <label for="pkg-name">שם החבילה *</label>
@@ -26,7 +25,7 @@ import { DishService } from '../../dishes/dish.service';
             placeholder="הכנס שם חבילה"
             />
           </div>
-    
+
           <div class="form-group">
             <label for="pkg-description">תיאור *</label>
             <textarea
@@ -38,20 +37,20 @@ import { DishService } from '../../dishes/dish.service';
               placeholder="תיאור קצר של החבילה"
             ></textarea>
           </div>
-    
+
           <div class="form-group">
-            <label for="pkg-price">מחיר (₪) *</label>
+            <label for="pkg-price">מחיר לאדם (₪) *</label>
               <input
                 id="pkg-price"
-                name="price"
+                name="pricePerPerson"
                 type="number"
-                [(ngModel)]="formData.price"
+                [(ngModel)]="formData.pricePerPerson"
                 required
-                min="0"
+                min="1"
                 placeholder="0"
                 />
             </div>
-    
+
             <div class="form-group">
               <label for="pkg-imageUrl">קישור לתמונה (אופציונלי)</label>
                 <input
@@ -61,47 +60,43 @@ import { DishService } from '../../dishes/dish.service';
                   placeholder="https://..."
                   />
               </div>
-    
+
               <div class="form-group">
-                <label for="pkg-dishes">בחר מנות *</label>
-                @if (allDishes().length > 0) {
-                  <div class="dishes-select">
-                    @for (dish of allDishes(); track dish) {
-                      <label
-                        class="dish-checkbox"
-                        >
-                        <input
-                          type="checkbox"
-                          [checked]="isDishSelected(dish.id)"
-                          (change)="toggleDish(dish)"
-                          />
-                          <span>{{ dish.name }} — ₪{{ dish.price }}</span>
-                        </label>
-                      }
+                <label>כמות מנות לכל קטגוריה</label>
+                <div class="limits-grid">
+                  @for (cat of categories; track cat.value) {
+                    <div class="limit-item">
+                      <label [for]="'limit-' + cat.value">{{ cat.label }}</label>
+                      <input
+                        [id]="'limit-' + cat.value"
+                        [name]="'limit-' + cat.value"
+                        type="number"
+                        min="0"
+                        [(ngModel)]="formData.limits[cat.value]"
+                        placeholder="0"
+                        />
                     </div>
-                  } @else {
-                    <p class="loading-text">טוען מנות...</p>
                   }
                 </div>
-    
-                @if (error()) {
-                  <p class="error-msg">{{ error() }}</p>
-                }
-    
-                <div class="form-actions">
-                  <button type="submit" class="btn-primary" [disabled]="saving()">
-                    {{ saving() ? 'שומר...' : (pkg ? 'עדכן חבילה' : 'הוסף חבילה') }}
-                  </button>
-                  <button type="button" class="btn-secondary" (click)="cancelled.emit()">ביטול</button>
-                </div>
-              </form>
-            </div>
+              </div>
+
+              @if (error()) {
+                <p class="error-msg">{{ error() }}</p>
+              }
+
+              <div class="form-actions">
+                <button type="submit" class="btn-primary" [disabled]="saving()">
+                  {{ saving() ? 'שומר...' : (pkg ? 'עדכן חבילה' : 'הוסף חבילה') }}
+                </button>
+                <button type="button" class="btn-secondary" (click)="cancelled.emit()">ביטול</button>
+              </div>
+            </form>
+          </div>
     `,
   styleUrl: './package-form.component.scss',
 })
 export class PackageFormComponent implements OnInit {
   private packageService = inject(PackageService);
-  private dishService = inject(DishService);
 
   @Input() pkg: Package | null = null;
   @Output() saved = new EventEmitter<void>();
@@ -109,36 +104,48 @@ export class PackageFormComponent implements OnInit {
 
   saving = signal(false);
   error = signal('');
-  allDishes = signal<Dish[]>([]);
 
-  formData: Partial<Omit<Package, 'dishes'>> & { dishes?: Dish[] } = {
+  readonly categories: { value: keyof PackageLimits; label: string }[] =
+    DISH_CATEGORIES.map((c) => ({
+      value: c.value as keyof PackageLimits,
+      label: c.label,
+    }));
+
+  formData: {
+    name: string;
+    description: string;
+    pricePerPerson: number;
+    imageUrl: string;
+    limits: PackageLimits;
+  } = {
     name: '',
     description: '',
-    price: 0,
+    pricePerPerson: 0,
     imageUrl: '',
-    dishes: [],
+    limits: this.emptyLimits(),
   };
 
   ngOnInit(): void {
-    this.dishService.getAll().subscribe({
-      next: (dishes) => this.allDishes.set(dishes),
-    });
     if (this.pkg) {
-      this.formData = { ...this.pkg, dishes: [...this.pkg.dishes] };
+      this.formData = {
+        name: this.pkg.name,
+        description: this.pkg.description,
+        pricePerPerson: this.pkg.pricePerPerson,
+        imageUrl: this.pkg.imageUrl ?? '',
+        limits: { ...this.emptyLimits(), ...this.pkg.limits },
+      };
     }
   }
 
-  isDishSelected(id: string): boolean {
-    return (this.formData.dishes ?? []).some((d) => d.id === id);
-  }
-
-  toggleDish(dish: Dish): void {
-    const current = this.formData.dishes ?? [];
-    if (this.isDishSelected(dish.id)) {
-      this.formData.dishes = current.filter((d) => d.id !== dish.id);
-    } else {
-      this.formData.dishes = [...current, dish];
-    }
+  private emptyLimits(): PackageLimits {
+    return {
+      starters: 0,
+      mainCourses: 0,
+      salads: 0,
+      desserts: 0,
+      breads: 0,
+      drinks: 0,
+    };
   }
 
   onSubmit(): void {
@@ -148,8 +155,8 @@ export class PackageFormComponent implements OnInit {
     const payload: Partial<Package> = {
       name: this.formData.name,
       description: this.formData.description,
-      price: this.formData.price,
-      dishes: this.formData.dishes ?? [],
+      pricePerPerson: Number(this.formData.pricePerPerson),
+      limits: this.normalizeLimits(this.formData.limits),
     };
     if (this.formData.imageUrl) payload.imageUrl = this.formData.imageUrl;
 
@@ -167,5 +174,16 @@ export class PackageFormComponent implements OnInit {
         this.saving.set(false);
       },
     });
+  }
+
+  private normalizeLimits(limits: PackageLimits): PackageLimits {
+    return {
+      starters: Number(limits.starters) || 0,
+      mainCourses: Number(limits.mainCourses) || 0,
+      salads: Number(limits.salads) || 0,
+      desserts: Number(limits.desserts) || 0,
+      breads: Number(limits.breads) || 0,
+      drinks: Number(limits.drinks) || 0,
+    };
   }
 }
