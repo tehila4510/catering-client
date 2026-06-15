@@ -1,0 +1,21 @@
+@use '../../../../styles/variables' as *;
+
+.loader-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 0;
+}
+
+.loader {
+  border: 3px solid rgba($gold, 0.2);
+  border-top-color: $gold;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
