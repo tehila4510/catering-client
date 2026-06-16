@@ -28,6 +28,14 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
             <span class="nav-icon">📦</span>
             ניהול חבילות
           </a>
+          <a
+            routerLink="orders"
+            routerLinkActive="active"
+            class="nav-link"
+          >
+            <span class="nav-icon">📋</span>
+            ניהול הזמנות
+          </a>
         </nav>
       </aside>
       <main class="content-area">

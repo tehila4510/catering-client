@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Dish } from '../../../core/models/dish.model';
 import { DishService } from '../dish.service';
 import { DISH_CATEGORIES } from '../../../core/constants/categories';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-dish-form',
@@ -80,6 +81,7 @@ import { DISH_CATEGORIES } from '../../../core/constants/categories';
 })
 export class DishFormComponent implements OnInit {
   private dishService = inject(DishService);
+  private toast = inject(ToastService);
 
   @Input() dish: Dish | null = null;
   @Output() saved = new EventEmitter<void>();
@@ -117,6 +119,10 @@ export class DishFormComponent implements OnInit {
     request$.subscribe({
       next: () => {
         this.saving.set(false);
+        this.toast.show(
+          this.dish ? 'המנה עודכנה בהצלחה' : 'המנה נוספה בהצלחה',
+          'success',
+        );
         this.saved.emit();
       },
       error: (e: { error?: { message?: string } }) => {

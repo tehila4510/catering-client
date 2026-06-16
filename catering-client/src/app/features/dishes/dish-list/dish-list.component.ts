@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Dish } from '../../../core/models/dish.model';
 import { DishService } from '../dish.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { DISH_CATEGORIES } from '../../../core/constants/categories';
 import { DishCardComponent } from '../../../shared/components/dish-card/dish-card.component';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { DishFormComponent } from '../dish-form/dish-form.component';
@@ -24,10 +25,21 @@ import { DishFormComponent } from '../dish-form/dish-form.component';
         <input
           class="search-input"
           type="text"
-          placeholder="חיפוש לפי שם או קטגוריה..."
+          placeholder="חפש מנה..."
           [(ngModel)]="searchTerm"
-          (ngModelChange)="onSearch()"
+          (ngModelChange)="applyFilters()"
           />
+          <select
+            class="category-select"
+            [(ngModel)]="selectedCategory"
+            (ngModelChange)="applyFilters()"
+            aria-label="סינון לפי קטגוריה"
+            >
+            <option value="">הכל</option>
+            @for (cat of categories; track cat.value) {
+              <option [value]="cat.value">{{ cat.label }}</option>
+            }
+          </select>
           @if (authService.isAdmin()) {
             <button
               class="btn-primary"
@@ -84,6 +96,9 @@ export class DishListComponent implements OnInit {
   showForm = signal(false);
   editingDish = signal<Dish | null>(null);
   searchTerm = '';
+  selectedCategory = '';
+
+  readonly categories = DISH_CATEGORIES;
 
   ngOnInit(): void {
     this.loadDishes();
@@ -94,21 +109,22 @@ export class DishListComponent implements OnInit {
     this.dishService.getAll().subscribe({
       next: (data) => {
         this.dishes.set(data);
-        this.filtered.set(data);
+        this.applyFilters();
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
   }
 
-  onSearch(): void {
-    const term = this.searchTerm.toLowerCase();
+  applyFilters(): void {
+    const term = this.searchTerm.trim().toLowerCase();
+    const category = this.selectedCategory;
     this.filtered.set(
-      this.dishes().filter(
-        (d) =>
-          d.name.toLowerCase().includes(term) ||
-          d.category.toLowerCase().includes(term),
-      ),
+      this.dishes().filter((d) => {
+        const matchesTerm = !term || d.name.toLowerCase().includes(term);
+        const matchesCategory = !category || d.category === category;
+        return matchesTerm && matchesCategory;
+      }),
     );
   }
 

@@ -85,16 +85,23 @@ export const routes: Routes = [
       {
         path: 'dishes',
         loadComponent: () =>
-          import('./features/dishes/dish-form/dish-form.component').then(
-            (m) => m.DishFormComponent,
+          import('./features/admin/admin-dishes/admin-dishes.component').then(
+            (m) => m.AdminDishesComponent,
           ),
       },
       {
         path: 'packages',
         loadComponent: () =>
           import(
-            './features/packages/package-form/package-form.component'
-          ).then((m) => m.PackageFormComponent),
+            './features/admin/admin-packages/admin-packages.component'
+          ).then((m) => m.AdminPackagesComponent),
+      },
+      {
+        path: 'orders',
+        loadComponent: () =>
+          import('./features/admin/admin-orders/admin-orders.component').then(
+            (m) => m.AdminOrdersComponent,
+          ),
       },
     ],
   },
