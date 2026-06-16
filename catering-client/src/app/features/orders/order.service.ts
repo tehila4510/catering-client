@@ -4,7 +4,12 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
-import { CreateOrderDto, Order, UpdateOrderDto } from '../../core/models/order.model';
+import {
+  CreateOrderDto,
+  Order,
+  OrderFullDetails,
+  UpdateOrderDto,
+} from '../../core/models/order.model';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -35,6 +40,17 @@ interface OrderApi {
   isApproved?: boolean;
 }
 
+interface PopulatedDish {
+  _id?: string;
+  id?: string;
+  name?: string;
+  category?: string;
+}
+
+interface OrderFullApi extends OrderApi {
+  selectedItems?: PopulatedDish[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class OrderService {
   private http = inject(HttpClient);
@@ -61,6 +77,13 @@ export class OrderService {
       .pipe(map((res) => (res.data ?? []).map((o) => this.toModel(o))));
   }
 
+  // Admin: full populated details for a single order.
+  getFullDetails(id: string): Observable<OrderFullDetails> {
+    return this.http
+      .get<ApiResponse<OrderFullApi>>(`${this.apiUrl}/${id}/full-details`)
+      .pipe(map((res) => this.toFullModel(res.data)));
+  }
+
   update(id: string, data: UpdateOrderDto): Observable<Order> {
     return this.http
       .put<ApiResponse<OrderApi>>(`${this.apiUrl}/${id}`, data)
@@ -79,6 +102,35 @@ export class OrderService {
     return this.http
       .get<ApiResponse<OrderApi[]>>(`${this.apiUrl}/by-date-range`, { params })
       .pipe(map((res) => (res.data ?? []).length));
+  }
+
+  private toFullModel(o: OrderFullApi): OrderFullDetails {
+    const base = this.toModel(o);
+    const usr = o.userId;
+    const userName = typeof usr === 'string' ? '' : (usr?.name ?? '');
+
+    // #region agent log
+    fetch('http://127.0.0.1:7472/ingest/1efcf1af-9ffc-46cb-be5f-a6ada37ad3ff',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'343f7b'},body:JSON.stringify({sessionId:'343f7b',hypothesisId:'C',location:'order.service.ts:toFullModel',message:'client received userId (keys only, no PII values)',data:{userIdType:typeof usr,keys:usr&&typeof usr==='object'?Object.keys(usr as object):null,hasNameValue:!!(usr&&typeof usr!=='string'&&usr.name),hasFullNameValue:!!(usr&&typeof usr!=='string'&&(usr as {fullName?:string}).fullName),computedUserNameEmpty:!userName},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+
+    const dishes = (o.selectedItems ?? []).map((d) => ({
+      id: d._id ?? d.id ?? '',
+      name: d.name ?? '',
+      category: d.category ?? '',
+    }));
+
+    return {
+      id: base.id,
+      userName: userName || base.userName,
+      userEmail: base.userEmail,
+      packageName: base.packageName,
+      numberOfGuests: base.numberOfGuests,
+      eventDate: base.eventDate,
+      address: base.address,
+      totalPrice: base.totalPrice,
+      isApproved: base.isApproved,
+      dishes,
+    };
   }
 
   private toModel(o: OrderApi): Order {

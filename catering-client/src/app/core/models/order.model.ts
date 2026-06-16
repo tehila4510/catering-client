@@ -28,6 +28,25 @@ export interface Order {
   isApproved: boolean;
 }
 
+export interface OrderDishItem {
+  id: string;
+  name: string;
+  category: string;
+}
+
+export interface OrderFullDetails {
+  id: string;
+  userName: string;
+  userEmail: string;
+  packageName: string;
+  numberOfGuests: number;
+  eventDate: string;
+  address: string;
+  totalPrice: number;
+  isApproved: boolean;
+  dishes: OrderDishItem[];
+}
+
 export const ORDER_STATUS_PENDING = 'ממתין לאישור';
 export const ORDER_STATUS_APPROVED = 'מאושר';
 

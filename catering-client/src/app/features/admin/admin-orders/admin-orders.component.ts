@@ -2,7 +2,12 @@ import { Component, OnInit, computed, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 
-import { Order, UpdateOrderDto, orderStatusLabel } from '../../../core/models/order.model';
+import {
+  Order,
+  OrderFullDetails,
+  UpdateOrderDto,
+  orderStatusLabel,
+} from '../../../core/models/order.model';
 import { OrderService } from '../../orders/order.service';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { ToastService } from '../../../core/services/toast.service';
@@ -81,12 +86,13 @@ interface OrderEditModel {
                 <div class="row"><span class="lbl">כתובת:</span><span>{{ order.address }}</span></div>
                 <div class="row"><span class="lbl">מחיר כולל:</span><span>₪{{ order.totalPrice }}</span></div>
               </div>
-              @if (!order.isApproved) {
-                <div class="order-actions">
+              <div class="order-actions">
+                <button class="btn-details" (click)="openDetails(order)">פרטים מלאים</button>
+                @if (!order.isApproved) {
                   <button class="btn-edit" (click)="openEdit(order)">עדכון</button>
                   <button class="btn-delete" (click)="deleteOrder(order)">מחיקה</button>
-                </div>
-              }
+                }
+              </div>
             </div>
           }
         </div>
@@ -134,6 +140,77 @@ interface OrderEditModel {
           </div>
         </div>
       }
+
+      @if (detailsOpen()) {
+        <div
+          class="modal-overlay"
+          role="button"
+          tabindex="0"
+          (click)="closeDetails()"
+          (keydown.escape)="closeDetails()"
+        >
+          <div
+            class="modal-box details-box"
+            role="presentation"
+            (click)="$event.stopPropagation()"
+            (keydown)="$event.stopPropagation()"
+          >
+            <h2>פרטי הזמנה מלאים</h2>
+
+            @if (detailsLoading()) {
+              <app-loader />
+            } @else if (details(); as d) {
+              <section class="details-section">
+                <h3>פרטי לקוח</h3>
+                <div class="row"><span class="lbl">שם מלא:</span><span>{{ d.userName || '—' }}</span></div>
+                <div class="row"><span class="lbl">אימייל:</span><span>{{ d.userEmail || '—' }}</span></div>
+              </section>
+
+              <section class="details-section">
+                <h3>פרטי האירוע</h3>
+                <div class="row"><span class="lbl">חבילה:</span><span>{{ d.packageName || '—' }}</span></div>
+                <div class="row"><span class="lbl">תאריך אירוע:</span><span>{{ d.eventDate | date: 'dd/MM/yyyy' }}</span></div>
+                <div class="row"><span class="lbl">כתובת:</span><span>{{ d.address }}</span></div>
+                <div class="row"><span class="lbl">מס' אורחים:</span><span>{{ d.numberOfGuests }}</span></div>
+                <div class="row"><span class="lbl">מחיר כולל:</span><span>₪{{ d.totalPrice }}</span></div>
+                <div class="row">
+                  <span class="lbl">סטטוס:</span>
+                  <span
+                    class="status-badge"
+                    [class.approved]="d.isApproved"
+                    [class.pending]="!d.isApproved"
+                  >{{ statusLabelFor(d.isApproved) }}</span>
+                </div>
+              </section>
+
+              <section class="details-section">
+                <h3>מנות נבחרות</h3>
+                @if (dishGroups().length === 0) {
+                  <p class="muted">לא נבחרו מנות</p>
+                } @else {
+                  @for (group of dishGroups(); track group.label) {
+                    <div class="dish-group">
+                      <h4>{{ group.label }}</h4>
+                      <ul>
+                        @for (name of group.dishes; track name) {
+                          <li>{{ name }}</li>
+                        }
+                      </ul>
+                    </div>
+                  }
+                }
+              </section>
+
+              <div class="form-actions">
+                @if (!d.isApproved) {
+                  <button type="button" class="btn-primary" (click)="openEditFromDetails()">עדכון סטטוס</button>
+                }
+                <button type="button" class="btn-secondary" (click)="closeDetails()">סגירה</button>
+              </div>
+            }
+          </div>
+        </div>
+      }
     </div>
   `,
   styleUrl: './admin-orders.component.scss',
@@ -147,9 +224,33 @@ export class AdminOrdersComponent implements OnInit {
   saving = signal(false);
   editing = signal<Order | null>(null);
 
+  detailsOpen = signal(false);
+  detailsLoading = signal(false);
+  details = signal<OrderFullDetails | null>(null);
+
   customerTerm = signal('');
   startDate = signal('');
   endDate = signal('');
+
+  private readonly categoryOrder: { key: string; label: string }[] = [
+    { key: 'starters', label: 'מנות ראשונות' },
+    { key: 'mainCourses', label: 'מנות עיקריות' },
+    { key: 'salads', label: 'סלטים' },
+    { key: 'desserts', label: 'קינוחים' },
+    { key: 'breads', label: 'לחמים' },
+    { key: 'drinks', label: 'משקאות' },
+  ];
+
+  dishGroups = computed(() => {
+    const d = this.details();
+    if (!d) return [];
+    return this.categoryOrder
+      .map((c) => ({
+        label: c.label,
+        dishes: d.dishes.filter((dish) => dish.category === c.key).map((dish) => dish.name),
+      }))
+      .filter((group) => group.dishes.length > 0);
+  });
 
   editModel: OrderEditModel = {
     numberOfGuests: 1,
@@ -202,6 +303,40 @@ export class AdminOrdersComponent implements OnInit {
 
   statusLabel(order: Order): string {
     return orderStatusLabel(order);
+  }
+
+  statusLabelFor(isApproved: boolean): string {
+    return orderStatusLabel({ isApproved });
+  }
+
+  openDetails(order: Order): void {
+    this.detailsOpen.set(true);
+    this.detailsLoading.set(true);
+    this.details.set(null);
+    this.orderService.getFullDetails(order.id).subscribe({
+      next: (data) => {
+        this.details.set(data);
+        this.detailsLoading.set(false);
+      },
+      error: () => {
+        this.detailsLoading.set(false);
+        this.closeDetails();
+        this.toast.show('שגיאה בטעינת פרטי ההזמנה', 'error');
+      },
+    });
+  }
+
+  closeDetails(): void {
+    this.detailsOpen.set(false);
+    this.details.set(null);
+  }
+
+  openEditFromDetails(): void {
+    const d = this.details();
+    if (!d) return;
+    const order = this.orders().find((o) => o.id === d.id);
+    this.closeDetails();
+    if (order) this.openEdit(order);
   }
 
   clearFilters(): void {
