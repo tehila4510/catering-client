@@ -4,8 +4,10 @@ export interface LoginDto {
 }
 
 export interface RegisterDto {
+  name: string;
   email: string;
   password: string;
+  phone: string;
 }
 
 export interface AuthResponse {

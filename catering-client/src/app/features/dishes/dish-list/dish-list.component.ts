@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Dish } from '../../../core/models/dish.model';
 import { DishService } from '../dish.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { categoryLabel } from '../../../core/constants/categories';
 import { DishCardComponent } from '../../../shared/components/dish-card/dish-card.component';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { DishFormComponent } from '../dish-form/dish-form.component';
@@ -102,13 +103,19 @@ export class DishListComponent implements OnInit {
   }
 
   onSearch(): void {
-    const term = this.searchTerm.toLowerCase();
+    const term = this.searchTerm.trim().toLowerCase();
     this.filtered.set(
-      this.dishes().filter(
-        (d) =>
-          d.name.toLowerCase().includes(term) ||
-          d.category.toLowerCase().includes(term),
-      ),
+      this.dishes().filter((d) => {
+        const name = d.name.toLowerCase();
+        const category = d.category.toLowerCase();
+        const categoryName = categoryLabel(d.category).toLowerCase();
+
+        return (
+          name.includes(term) ||
+          category.includes(term) ||
+          categoryName.includes(term)
+        );
+      }),
     );
   }
 

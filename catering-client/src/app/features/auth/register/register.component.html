@@ -4,6 +4,21 @@
 
     <form (ngSubmit)="onSubmit()" #registerForm="ngForm" novalidate>
       <div class="form-group">
+        <label for="name" class="form-label">שם מלא</label>
+        <input
+          id="name"
+          type="text"
+          class="form-input"
+          placeholder="שם מלא"
+          [(ngModel)]="name"
+          name="name"
+          required
+          autocomplete="name"
+          aria-label="שם מלא"
+          />
+        </div>
+
+      <div class="form-group">
         <label for="email" class="form-label">אימייל</label>
         <input
           id="email"
@@ -15,6 +30,21 @@
           required
           autocomplete="email"
           aria-label="כתובת אימייל"
+          />
+        </div>
+
+      <div class="form-group">
+        <label for="phone" class="form-label">טלפון</label>
+        <input
+          id="phone"
+          type="tel"
+          class="form-input"
+          placeholder="טלפון"
+          [(ngModel)]="phone"
+          name="phone"
+          required
+          autocomplete="tel"
+          aria-label="מספר טלפון"
           />
         </div>
 

@@ -81,6 +81,7 @@ export class PackageService {
     const body: Record<string, unknown> = {};
     if (p.name !== undefined) body['packageName'] = p.name;
     if (p.description !== undefined) body['description'] = p.description;
+    if (p.imageUrl !== undefined) body['imageUrl'] = p.imageUrl;
     if (p.pricePerPerson !== undefined) body['pricePerPerson'] = p.pricePerPerson;
     if (p.limits !== undefined) body['limits'] = p.limits;
     if (p.featured !== undefined) body['featured'] = p.featured;
