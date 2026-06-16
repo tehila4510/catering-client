@@ -185,10 +185,18 @@ export class AdminOrdersComponent implements OnInit {
     this.loading.set(true);
     this.orderService.getAll().subscribe({
       next: (data) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7472/ingest/1efcf1af-9ffc-46cb-be5f-a6ada37ad3ff',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5d23e0'},body:JSON.stringify({sessionId:'5d23e0',hypothesisId:'A',location:'admin-orders.component.ts:loadOrders',message:'getAll success',data:{count:data.length},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
         this.orders.set(data);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (err) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7472/ingest/1efcf1af-9ffc-46cb-be5f-a6ada37ad3ff',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5d23e0'},body:JSON.stringify({sessionId:'5d23e0',hypothesisId:'A',location:'admin-orders.component.ts:loadOrders',message:'getAll error',data:{status:err?.status,url:err?.url,statusText:err?.statusText},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+        this.loading.set(false);
+      },
     });
   }
 

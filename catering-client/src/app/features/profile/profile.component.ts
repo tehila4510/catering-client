@@ -49,10 +49,18 @@ export class ProfileComponent implements OnInit {
     this.ordersLoading.set(true);
     this.orderService.getUserOrders().subscribe({
       next: (data) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7472/ingest/1efcf1af-9ffc-46cb-be5f-a6ada37ad3ff',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5d23e0'},body:JSON.stringify({sessionId:'5d23e0',hypothesisId:'D',location:'profile.component.ts:loadOrders',message:'user orders mapped',data:{count:data.length,first:data[0]?{packageName:data[0].packageName,eventDate:data[0].eventDate,address:data[0].address,totalPrice:data[0].totalPrice,isApproved:data[0].isApproved}:null},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
         this.orders.set(data);
         this.ordersLoading.set(false);
       },
-      error: () => this.ordersLoading.set(false),
+      error: (err) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7472/ingest/1efcf1af-9ffc-46cb-be5f-a6ada37ad3ff',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5d23e0'},body:JSON.stringify({sessionId:'5d23e0',hypothesisId:'D',location:'profile.component.ts:loadOrders',message:'user orders error',data:{status:err?.status,url:err?.url},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+        this.ordersLoading.set(false);
+      },
     });
   }
 
