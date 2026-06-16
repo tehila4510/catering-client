@@ -4,6 +4,7 @@ export interface CreateOrderDto {
   eventDate: string;
   address: string;
   selectedItems?: string[];
+  totalPrice?: number;
 }
 
 export interface Order {
