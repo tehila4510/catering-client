@@ -86,6 +86,30 @@
   }
 }
 
+.order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.login-prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: $black-soft;
+  border: 1px solid rgba($gold, 0.25);
+  border-radius: $radius-md;
+  padding: 1rem 1.25rem;
+
+  p {
+    color: $white-dim;
+    font-size: 1rem;
+  }
+}
+
 .not-found {
   text-align: center;
   padding: 4rem 0;

@@ -63,6 +63,14 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard],
   },
+  {
+    path: 'order/:packageId',
+    loadComponent: () =>
+      import('./features/orders/order-form/order-form.component').then(
+        (m) => m.OrderFormComponent,
+      ),
+    canActivate: [authGuard],
+  },
 
   // Admin routes
   {
@@ -73,6 +81,7 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard, adminGuard],
     children: [
+      { path: '', redirectTo: 'dishes', pathMatch: 'full' },
       {
         path: 'dishes',
         loadComponent: () =>

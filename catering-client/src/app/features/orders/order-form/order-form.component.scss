@@ -1,0 +1,94 @@
+@use '../../../../styles/variables' as *;
+
+.order-page {
+  min-height: 100vh;
+  background: $black;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.order-card {
+  background: $black-soft;
+  border: 1px solid rgba($gold, 0.2);
+  border-radius: $radius-md;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  h1 {
+    font-family: $font-display;
+    font-size: 1.8rem;
+    color: $gold;
+  }
+}
+
+.price-line,
+.total-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  .gold-text {
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+}
+
+.total-line {
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba($gold, 0.15);
+}
+
+.form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label {
+    color: $white-dim;
+    font-size: 0.9rem;
+  }
+
+  input {
+    background: $black;
+    border: 1px solid rgba($gold, 0.25);
+    border-radius: $radius-sm;
+    padding: 0.7rem 0.9rem;
+    color: $white;
+    font-size: 1rem;
+
+    &:focus {
+      outline: none;
+      border-color: $gold;
+    }
+  }
+}
+
+.error-msg {
+  color: #ff6b6b;
+  font-size: 0.9rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.not-found {
+  text-align: center;
+  padding: 4rem 0;
+  color: $gray;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}

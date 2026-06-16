@@ -1,9 +1,10 @@
 import { Component, OnInit, signal, input, inject } from '@angular/core';
 
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { Package } from '../../../core/models/package.model';
 import { PackageService } from '../package.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { CATEGORY_LABELS } from '../../../core/constants/categories';
 
@@ -55,7 +56,22 @@ interface LimitRow {
             <span class="label-caps">מחיר לאדם</span>
             <span class="price gold-text">₪{{ p.pricePerPerson }}</span>
           </p>
-          <a routerLink="/packages" class="btn-secondary">← חזרה לחבילות</a>
+
+          <div class="order-actions">
+            <button type="button" class="btn-primary" (click)="onOrder(p.id)">
+              להזמנה
+            </button>
+            <a routerLink="/packages" class="btn-secondary">← חזרה לחבילות</a>
+          </div>
+
+          @if (showLoginPrompt()) {
+            <div class="login-prompt">
+              <p>עליך להתחבר כדי לבצע הזמנה</p>
+              <button type="button" class="btn-primary" (click)="goToLogin()">
+                התחברות
+              </button>
+            </div>
+          }
         </div>
       }
     </section>
@@ -64,11 +80,14 @@ interface LimitRow {
 })
 export class PackageDetailComponent implements OnInit {
   private packageService = inject(PackageService);
+  private auth = inject(AuthService);
+  private router = inject(Router);
 
   readonly id = input<string>('');
 
   pkg = signal<Package | null>(null);
   loading = signal(true);
+  showLoginPrompt = signal(false);
 
   readonly fallbackImage =
     'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800';
@@ -97,5 +116,17 @@ export class PackageDetailComponent implements OnInit {
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  onOrder(packageId: string): void {
+    if (this.auth.isLoggedIn()) {
+      this.router.navigate(['/order', packageId]);
+    } else {
+      this.showLoginPrompt.set(true);
+    }
+  }
+
+  goToLogin(): void {
+    this.router.navigate(['/login']);
   }
 }

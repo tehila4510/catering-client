@@ -15,6 +15,7 @@ export class RegisterComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
 
+  name = '';
   email = '';
   password = '';
   confirmPassword = '';
@@ -30,12 +31,14 @@ export class RegisterComponent {
     }
 
     this.loading = true;
-    this.auth.register({ email: this.email, password: this.password }).subscribe({
-      next: () => this.router.navigate(['/home']),
-      error: (e: { error?: { message?: string } }) => {
-        this.error = e.error?.message || 'ההרשמה נכשלה, נסה שוב';
-        this.loading = false;
-      },
-    });
+    this.auth
+      .register({ name: this.name, email: this.email, password: this.password })
+      .subscribe({
+        next: () => this.router.navigate(['/home']),
+        error: (e: { error?: { message?: string } }) => {
+          this.error = e.error?.message || 'ההרשמה נכשלה, נסה שוב';
+          this.loading = false;
+        },
+      });
   }
 }
