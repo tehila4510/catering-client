@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Package, PackageLimits } from '../../../core/models/package.model';
 import { PackageService } from '../package.service';
 import { DISH_CATEGORIES } from '../../../core/constants/categories';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-package-form',
@@ -97,6 +98,7 @@ import { DISH_CATEGORIES } from '../../../core/constants/categories';
 })
 export class PackageFormComponent implements OnInit {
   private packageService = inject(PackageService);
+  private toast = inject(ToastService);
 
   @Input() pkg: Package | null = null;
   @Output() saved = new EventEmitter<void>();
@@ -167,6 +169,10 @@ export class PackageFormComponent implements OnInit {
     request$.subscribe({
       next: () => {
         this.saving.set(false);
+        this.toast.show(
+          this.pkg ? 'החבילה עודכנה בהצלחה' : 'החבילה נוספה בהצלחה',
+          'success',
+        );
         this.saved.emit();
       },
       error: (e: { error?: { message?: string } }) => {

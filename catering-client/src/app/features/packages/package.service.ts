@@ -85,6 +85,7 @@ export class PackageService {
     if (p.pricePerPerson !== undefined) body['pricePerPerson'] = p.pricePerPerson;
     if (p.limits !== undefined) body['limits'] = p.limits;
     if (p.featured !== undefined) body['featured'] = p.featured;
+    if (p.imageUrl !== undefined) body['imageUrl'] = p.imageUrl;
     return body;
   }
 }

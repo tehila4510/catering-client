@@ -63,6 +63,14 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard],
   },
+  {
+    path: 'order/:packageId',
+    loadComponent: () =>
+      import('./features/orders/order-form/order-form.component').then(
+        (m) => m.OrderFormComponent,
+      ),
+    canActivate: [authGuard],
+  },
 
   // Admin routes
   {
@@ -73,19 +81,27 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard, adminGuard],
     children: [
+      { path: '', redirectTo: 'dishes', pathMatch: 'full' },
       {
         path: 'dishes',
         loadComponent: () =>
-          import('./features/dishes/dish-form/dish-form.component').then(
-            (m) => m.DishFormComponent,
+          import('./features/admin/admin-dishes/admin-dishes.component').then(
+            (m) => m.AdminDishesComponent,
           ),
       },
       {
         path: 'packages',
         loadComponent: () =>
           import(
-            './features/packages/package-form/package-form.component'
-          ).then((m) => m.PackageFormComponent),
+            './features/admin/admin-packages/admin-packages.component'
+          ).then((m) => m.AdminPackagesComponent),
+      },
+      {
+        path: 'orders',
+        loadComponent: () =>
+          import('./features/admin/admin-orders/admin-orders.component').then(
+            (m) => m.AdminOrdersComponent,
+          ),
       },
     ],
   },

@@ -31,7 +31,7 @@ export class AuthService {
       .pipe(
         tap(({ data }) => {
           this.tokenService.setToken(data.token);
-          this.loadProfile();
+          this.currentUser.set(data.user);
         }),
         map(() => void 0),
       );
@@ -43,7 +43,7 @@ export class AuthService {
       .pipe(
         tap(({ data: authData }) => {
           this.tokenService.setToken(authData.token);
-          this.loadProfile();
+          this.currentUser.set(authData.user);
         }),
         map(() => void 0),
       );
