@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Dish } from '../../../core/models/dish.model';
 import { DishService } from '../dish.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { DISH_CATEGORIES } from '../../../core/constants/categories';
+import { categoryLabel, DISH_CATEGORIES } from '../../../core/constants/categories';
 import { DishCardComponent } from '../../../shared/components/dish-card/dish-card.component';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { DishFormComponent } from '../dish-form/dish-form.component';
@@ -25,7 +25,7 @@ import { DishFormComponent } from '../dish-form/dish-form.component';
         <input
           class="search-input"
           type="text"
-          placeholder="חפש מנה..."
+          placeholder="חפש לפי שם מנה או קטגוריה..."
           [(ngModel)]="searchTerm"
           (ngModelChange)="applyFilters()"
           />
@@ -121,7 +121,10 @@ export class DishListComponent implements OnInit {
     const category = this.selectedCategory;
     this.filtered.set(
       this.dishes().filter((d) => {
-        const matchesTerm = !term || d.name.toLowerCase().includes(term);
+        const matchesTerm =
+          !term ||
+          d.name.toLowerCase().includes(term) ||
+          categoryLabel(d.category).toLowerCase().includes(term);
         const matchesCategory = !category || d.category === category;
         return matchesTerm && matchesCategory;
       }),

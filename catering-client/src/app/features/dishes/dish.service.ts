@@ -28,9 +28,15 @@ export class DishService {
 
   private apiUrl = `${environment.apiUrl}/dishes`;
 
-  getAll(): Observable<Dish[]> {
+  getAll(filters?: { name?: string; category?: string }): Observable<Dish[]> {
+    const params: Record<string, string> = {};
+    const name = filters?.name?.trim();
+    const category = filters?.category?.trim();
+    if (name) params['name'] = name;
+    if (category) params['category'] = category;
+
     return this.http
-      .get<ApiResponse<DishApi[]>>(this.apiUrl)
+      .get<ApiResponse<DishApi[]>>(this.apiUrl, { params })
       .pipe(map((res) => (res.data ?? []).map((d) => this.toModel(d))));
   }
 
