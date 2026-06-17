@@ -67,32 +67,22 @@ $gray: #5c5c5c;
   gap: 1.25rem;
 
   a {
-    position: relative;
+    display: inline-block;
     color: $white-dim;
     text-decoration: none;
     font-family: 'Heebo', sans-serif;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     letter-spacing: 0.3px;
-    padding-bottom: 2px;
-    transition: color 0.25s ease;
-
-    &::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      bottom: 0;
-      width: 0;
-      height: 1px;
-      background-color: $gold;
-      transition: width 0.25s ease;
-    }
+    padding: 0.45rem 0.85rem;
+    border-radius: 6px;
+    border: 1px solid rgba($gold, 0.25);
+    cursor: pointer;
+    transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease;
 
     &:hover {
       color: $gold;
-
-      &::after {
-        width: 100%;
-      }
+      background: rgba($gold, 0.1);
+      border-color: rgba($gold, 0.45);
     }
   }
 }
@@ -124,6 +114,7 @@ $gray: #5c5c5c;
   text-decoration: none;
   font-family: 'Heebo', sans-serif;
   font-size: 0.9rem;
+  cursor: pointer;
   transition: color 0.25s ease;
 
   .footer-icon {
