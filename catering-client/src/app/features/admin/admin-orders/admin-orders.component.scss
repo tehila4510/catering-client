@@ -202,6 +202,10 @@
   }
 }
 
+.edit-box {
+  max-width: 600px;
+}
+
 .edit-form {
   display: flex;
   flex-direction: column;
@@ -215,7 +219,7 @@
 
   label { color: $white-dim; font-size: 0.9rem; }
 
-  input {
+  input, select {
     padding: 0.6rem 0.9rem;
     background: $black;
     border: 1px solid rgba($gold, 0.3);
@@ -227,6 +231,110 @@
 
     &:focus { border-color: $gold; }
   }
+
+  select option { background: $black-soft; }
+}
+
+.dishes-section {
+  border: 1px solid rgba($gold, 0.15);
+  border-radius: $radius-sm;
+  padding: 1rem;
+}
+
+.dishes-title {
+  font-family: $font-display;
+  color: $gold-light;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.category-block {
+  margin-bottom: 0.9rem;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+.cat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.cat-label {
+  color: $white-dim;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.cat-counter {
+  font-size: 0.78rem;
+  color: $gray;
+
+  &.complete { color: $gold; }
+}
+
+.dish-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+}
+
+.dish-check {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: $white;
+  cursor: pointer;
+
+  input[type='checkbox'] {
+    width: 15px;
+    height: 15px;
+    accent-color: $gold;
+    cursor: pointer;
+    padding: 0;
+    border: none;
+    background: none;
+  }
+
+  &.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.no-dishes {
+  color: $gray;
+  font-size: 0.82rem;
+}
+
+.total-estimate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-top: 1px solid rgba($gold, 0.12);
+  font-size: 0.95rem;
+  color: $white-dim;
+
+  .gold-text {
+    color: $gold;
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+}
+
+.date-hint {
+  color: $white-dim;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.date-error {
+  color: #ff6b6b;
+  font-size: 0.82rem;
+  margin-top: 0.25rem;
 }
 
 .checkbox-row {

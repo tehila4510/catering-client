@@ -71,7 +71,7 @@ export class PackageService {
       name: p.packageName ?? p.name ?? '',
       description: p.description ?? '',
       pricePerPerson: p.pricePerPerson ?? 0,
-      limits: { ...this.emptyLimits(), ...(p.limits ?? {}) },
+      limits: { ...this.emptyLimits(), ...(p.limits ?? {}) } as PackageLimits,
       featured: p.featured ?? false,
       imageUrl: p.imageUrl,
     };

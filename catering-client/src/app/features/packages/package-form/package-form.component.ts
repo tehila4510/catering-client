@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { Package, PackageLimits } from '../../../core/models/package.model';
 import { PackageService } from '../package.service';
-import { DISH_CATEGORIES } from '../../../core/constants/categories';
+import { DISH_CATEGORIES, PACKAGE_LIMIT_MAX } from '../../../core/constants/categories';
 import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
@@ -73,9 +73,11 @@ import { ToastService } from '../../../core/services/toast.service';
                         [name]="'limit-' + cat.value"
                         type="number"
                         min="0"
+                        [max]="limitMax(cat.value)"
                         [(ngModel)]="formData.limits[cat.value]"
                         placeholder="0"
                         />
+                      <span class="limit-hint">עד {{ limitMax(cat.value) }}</span>
                     </div>
                   }
                 </div>
@@ -180,6 +182,10 @@ export class PackageFormComponent implements OnInit {
         this.saving.set(false);
       },
     });
+  }
+
+  limitMax(category: keyof PackageLimits): number {
+    return PACKAGE_LIMIT_MAX[category] ?? 15;
   }
 
   private normalizeLimits(limits: PackageLimits): PackageLimits {

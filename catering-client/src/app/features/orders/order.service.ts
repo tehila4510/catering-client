@@ -6,6 +6,7 @@ import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
   CreateOrderDto,
+  CustomerUpdateOrderDto,
   Order,
   OrderFullDetails,
   UpdateOrderDto,
@@ -90,6 +91,13 @@ export class OrderService {
       .pipe(map((res) => this.toModel(res.data)));
   }
 
+  /** Customer self-edit: PUT /orders/:id/edit — cannot change isApproved. */
+  customerUpdate(id: string, data: CustomerUpdateOrderDto): Observable<Order> {
+    return this.http
+      .put<ApiResponse<OrderApi>>(`${this.apiUrl}/${id}/edit`, data)
+      .pipe(map((res) => this.toModel(res.data)));
+  }
+
   delete(id: string): Observable<void> {
     return this.http
       .delete<ApiResponse<null>>(`${this.apiUrl}/${id}`)
@@ -102,6 +110,20 @@ export class OrderService {
     return this.http
       .get<ApiResponse<OrderApi[]>>(`${this.apiUrl}/by-date-range`, { params })
       .pipe(map((res) => (res.data ?? []).length));
+  }
+
+  // Same as above but excludes one order by ID (used when editing an existing order).
+  getCountByDateExcluding(date: string, excludeOrderId: string): Observable<number> {
+    const params = new HttpParams().set('startDate', date).set('endDate', date);
+    return this.http
+      .get<ApiResponse<OrderApi[]>>(`${this.apiUrl}/by-date-range`, { params })
+      .pipe(
+        map((res) =>
+          (res.data ?? []).filter(
+            (o) => (o._id ?? o.id) !== excludeOrderId,
+          ).length,
+        ),
+      );
   }
 
   private toFullModel(o: OrderFullApi): OrderFullDetails {

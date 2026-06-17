@@ -8,10 +8,21 @@ export interface CreateOrderDto {
 }
 
 export interface UpdateOrderDto {
+  packageId?: string;
+  selectedItems?: string[];
   eventDate?: string;
   address?: string;
   numberOfGuests?: number;
   isApproved?: boolean;
+}
+
+/** DTO for customer self-edit — isApproved is intentionally omitted. */
+export interface CustomerUpdateOrderDto {
+  packageId?: string;
+  selectedItems?: string[];
+  eventDate?: string;
+  address?: string;
+  numberOfGuests?: number;
 }
 
 export interface Order {

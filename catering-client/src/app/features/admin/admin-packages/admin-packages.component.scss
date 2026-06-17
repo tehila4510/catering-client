@@ -38,7 +38,7 @@
 .table-head,
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1.4fr;
+  grid-template-columns: 1.4fr 2.2fr 1fr 1.2fr;
   align-items: center;
   gap: 1rem;
   padding: 0.85rem 1.25rem;
@@ -57,6 +57,12 @@
   font-size: 0.95rem;
 
   &:hover { background: rgba($gold, 0.04); }
+}
+
+.col-limits {
+  font-size: 0.82rem;
+  color: $white-dim;
+  line-height: 1.4;
 }
 
 .col-actions {

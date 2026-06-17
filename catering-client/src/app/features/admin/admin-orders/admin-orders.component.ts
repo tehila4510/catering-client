@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
+import { forkJoin } from 'rxjs';
 
 import {
   Order,
@@ -8,11 +9,25 @@ import {
   UpdateOrderDto,
   orderStatusLabel,
 } from '../../../core/models/order.model';
+import { Package } from '../../../core/models/package.model';
+import { Dish } from '../../../core/models/dish.model';
 import { OrderService } from '../../orders/order.service';
+import { PackageService } from '../../packages/package.service';
+import { DishService } from '../../dishes/dish.service';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { ToastService } from '../../../core/services/toast.service';
+import { CATEGORY_LABELS } from '../../../core/constants/categories';
+
+interface CategoryGroup {
+  key: string;
+  label: string;
+  limit: number;
+  dishes: Dish[];
+}
 
 interface OrderEditModel {
+  packageId: string;
+  selectedItems: string[];
   numberOfGuests: number;
   eventDate: string;
   address: string;
@@ -98,6 +113,7 @@ interface OrderEditModel {
         </div>
       }
 
+      <!-- Edit Modal -->
       @if (editing(); as order) {
         <div
           class="modal-overlay"
@@ -107,40 +123,143 @@ interface OrderEditModel {
           (keydown.escape)="closeEdit()"
         >
           <div
-            class="modal-box"
+            class="modal-box edit-box"
             role="presentation"
             (click)="$event.stopPropagation()"
             (keydown)="$event.stopPropagation()"
           >
             <h2>עדכון הזמנה</h2>
-            <form (ngSubmit)="saveEdit()" class="edit-form">
-              <div class="form-group">
-                <label for="ord-guests">מספר אורחים</label>
-                <input id="ord-guests" name="guests" type="number" min="1" [(ngModel)]="editModel.numberOfGuests" required />
-              </div>
-              <div class="form-group">
-                <label for="ord-date">תאריך אירוע</label>
-                <input id="ord-date" name="date" type="date" [(ngModel)]="editModel.eventDate" required />
-              </div>
-              <div class="form-group">
-                <label for="ord-address">כתובת</label>
-                <input id="ord-address" name="address" [(ngModel)]="editModel.address" required />
-              </div>
-              <label class="checkbox-row">
-                <input type="checkbox" name="approve" [(ngModel)]="editModel.isApproved" />
-                <span>אשר את ההזמנה</span>
-              </label>
-              <div class="form-actions">
-                <button type="submit" class="btn-primary" [disabled]="saving()">
-                  {{ saving() ? 'שומר...' : 'שמור שינויים' }}
-                </button>
-                <button type="button" class="btn-secondary" (click)="closeEdit()">ביטול</button>
-              </div>
-            </form>
+
+            @if (editLoadingDetails()) {
+              <app-loader />
+            } @else {
+              <form (ngSubmit)="saveEdit()" class="edit-form">
+
+                <!-- Package selector -->
+                <div class="form-group">
+                  <label for="ord-pkg">חבילה</label>
+                  <select
+                    id="ord-pkg"
+                    name="pkg"
+                    [ngModel]="editModel().packageId"
+                    (ngModelChange)="onPackageChange($event)"
+                    required
+                  >
+                    @for (pkg of packages(); track pkg.id) {
+                      <option [value]="pkg.id">{{ pkg.name }} — ₪{{ pkg.pricePerPerson }} לאדם</option>
+                    }
+                  </select>
+                </div>
+
+                <!-- Dish selection by category -->
+                @if (editCategories().length > 0) {
+                  <div class="dishes-section">
+                    <h3 class="dishes-title">בחירת מנות</h3>
+                    @for (cat of editCategories(); track cat.key) {
+                      <div class="category-block">
+                        <div class="cat-header">
+                          <span class="cat-label">{{ cat.label }}</span>
+                          <span
+                            class="cat-counter"
+                            [class.complete]="editCountFor(cat.key) === cat.limit"
+                          >{{ editCountFor(cat.key) }}/{{ cat.limit }}</span>
+                        </div>
+                        <div class="dish-checks">
+                          @for (dish of cat.dishes; track dish.id) {
+                            <label
+                              class="dish-check"
+                              [class.disabled]="!isDishSelected(dish.id) && editCountFor(cat.key) >= cat.limit"
+                            >
+                              <input
+                                type="checkbox"
+                                [checked]="isDishSelected(dish.id)"
+                                [disabled]="!isDishSelected(dish.id) && editCountFor(cat.key) >= cat.limit"
+                                (change)="toggleDishEdit(cat.key, dish.id, cat.limit)"
+                              />
+                              {{ dish.name }}
+                            </label>
+                          }
+                          @if (cat.dishes.length === 0) {
+                            <span class="no-dishes">אין מנות בקטגוריה זו</span>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <div class="form-group">
+                  <label for="ord-guests">מספר אורחים</label>
+                  <input
+                    id="ord-guests"
+                    name="guests"
+                    type="number"
+                    min="1"
+                    [ngModel]="editModel().numberOfGuests"
+                    (ngModelChange)="patchEdit({ numberOfGuests: +$event })"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="ord-date">תאריך אירוע</label>
+                  <input
+                    id="ord-date"
+                    name="date"
+                    type="date"
+                    [ngModel]="editModel().eventDate"
+                    (ngModelChange)="onEditDateChange($event)"
+                    required
+                  />
+                  @if (editCheckingDate()) {
+                    <span class="date-hint">בודק זמינות תאריך...</span>
+                  }
+                  @if (editDateError()) {
+                    <span class="date-error">{{ editDateError() }}</span>
+                  }
+                </div>
+                <div class="form-group">
+                  <label for="ord-address">כתובת</label>
+                  <input
+                    id="ord-address"
+                    name="address"
+                    [ngModel]="editModel().address"
+                    (ngModelChange)="patchEdit({ address: $event })"
+                    required
+                  />
+                </div>
+
+                <p class="total-estimate">
+                  <span>מחיר משוער:</span>
+                  <span class="gold-text">₪{{ estimatedTotal() }}</span>
+                </p>
+
+                <label class="checkbox-row">
+                  <input
+                    type="checkbox"
+                    name="approve"
+                    [ngModel]="editModel().isApproved"
+                    (ngModelChange)="patchEdit({ isApproved: $event })"
+                  />
+                  <span>אשר את ההזמנה</span>
+                </label>
+
+                <div class="form-actions">
+                  <button
+                    type="submit"
+                    class="btn-primary"
+                    [disabled]="saving() || editCheckingDate() || !!editDateError()"
+                  >
+                    {{ saving() ? 'שומר...' : editCheckingDate() ? 'בודק תאריך...' : 'שמור שינויים' }}
+                  </button>
+                  <button type="button" class="btn-secondary" (click)="closeEdit()">ביטול</button>
+                </div>
+              </form>
+            }
           </div>
         </div>
       }
 
+      <!-- Details Modal -->
       @if (detailsOpen()) {
         <div
           class="modal-overlay"
@@ -217,12 +336,19 @@ interface OrderEditModel {
 })
 export class AdminOrdersComponent implements OnInit {
   private orderService = inject(OrderService);
+  private packageService = inject(PackageService);
+  private dishService = inject(DishService);
   private toast = inject(ToastService);
 
   orders = signal<Order[]>([]);
+  packages = signal<Package[]>([]);
+  allDishes = signal<Dish[]>([]);
   loading = signal(true);
   saving = signal(false);
   editing = signal<Order | null>(null);
+  editLoadingDetails = signal(false);
+  editCheckingDate = signal(false);
+  editDateError = signal('');
 
   detailsOpen = signal(false);
   detailsLoading = signal(false);
@@ -231,6 +357,18 @@ export class AdminOrdersComponent implements OnInit {
   customerTerm = signal('');
   startDate = signal('');
   endDate = signal('');
+
+  private readonly emptyEdit: OrderEditModel = {
+    packageId: '',
+    selectedItems: [],
+    numberOfGuests: 1,
+    eventDate: '',
+    address: '',
+    isApproved: false,
+  };
+
+  // Signal so computed() tracks changes reactively.
+  editModel = signal<OrderEditModel>({ ...this.emptyEdit });
 
   private readonly categoryOrder: { key: string; label: string }[] = [
     { key: 'starters', label: 'מנות ראשונות' },
@@ -252,12 +390,28 @@ export class AdminOrdersComponent implements OnInit {
       .filter((group) => group.dishes.length > 0);
   });
 
-  editModel: OrderEditModel = {
-    numberOfGuests: 1,
-    eventDate: '',
-    address: '',
-    isApproved: false,
-  };
+  // Reactive: re-computes when editModel signal or packages/dishes signals change.
+  editCategories = computed<CategoryGroup[]>(() => {
+    const m = this.editModel();
+    const pkg = this.packages().find((p) => p.id === m.packageId);
+    if (!pkg?.limits) return [];
+    const dishes = this.allDishes();
+    return Object.entries(pkg.limits)
+      .filter(([, limit]) => (limit ?? 0) > 0)
+      .map(([key, limit]) => ({
+        key,
+        label: CATEGORY_LABELS[key] ?? key,
+        limit: limit ?? 0,
+        dishes: dishes.filter((d) => d.category === key),
+      }));
+  });
+
+  estimatedTotal = computed<number>(() => {
+    const m = this.editModel();
+    const pkg = this.packages().find((p) => p.id === m.packageId);
+    if (!pkg) return 0;
+    return pkg.pricePerPerson * (Number(m.numberOfGuests) || 0);
+  });
 
   filtered = computed(() => {
     const term = this.customerTerm().trim().toLowerCase();
@@ -279,25 +433,18 @@ export class AdminOrdersComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadOrders();
-  }
-
-  loadOrders(): void {
-    this.loading.set(true);
-    this.orderService.getAll().subscribe({
-      next: (data) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7472/ingest/1efcf1af-9ffc-46cb-be5f-a6ada37ad3ff',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5d23e0'},body:JSON.stringify({sessionId:'5d23e0',hypothesisId:'A',location:'admin-orders.component.ts:loadOrders',message:'getAll success',data:{count:data.length},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
-        this.orders.set(data);
+    forkJoin({
+      orders: this.orderService.getAll(),
+      packages: this.packageService.getAll(),
+      dishes: this.dishService.getAll(),
+    }).subscribe({
+      next: ({ orders, packages, dishes }) => {
+        this.orders.set(orders);
+        this.packages.set(packages);
+        this.allDishes.set(dishes);
         this.loading.set(false);
       },
-      error: (err) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7472/ingest/1efcf1af-9ffc-46cb-be5f-a6ada37ad3ff',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5d23e0'},body:JSON.stringify({sessionId:'5d23e0',hypothesisId:'A',location:'admin-orders.component.ts:loadOrders',message:'getAll error',data:{status:err?.status,url:err?.url,statusText:err?.statusText},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
-        this.loading.set(false);
-      },
+      error: () => this.loading.set(false),
     });
   }
 
@@ -346,29 +493,109 @@ export class AdminOrdersComponent implements OnInit {
   }
 
   openEdit(order: Order): void {
-    this.editModel = {
+    // Show the modal immediately with basic data; fill in dish selections once loaded.
+    this.editModel.set({
+      packageId: order.packageId,
+      selectedItems: [],
       numberOfGuests: order.numberOfGuests,
       eventDate: order.eventDate ? order.eventDate.substring(0, 10) : '',
       address: order.address,
       isApproved: order.isApproved,
-    };
+    });
     this.editing.set(order);
+    this.editLoadingDetails.set(true);
+
+    // Load the existing dish selection so checkboxes are pre-filled.
+    this.orderService.getFullDetails(order.id).subscribe({
+      next: (d) => {
+        this.editModel.update((m) => ({
+          ...m,
+          selectedItems: d.dishes.map((dish) => dish.id),
+        }));
+        this.editLoadingDetails.set(false);
+      },
+      error: () => this.editLoadingDetails.set(false),
+    });
   }
 
   closeEdit(): void {
     this.editing.set(null);
+    this.editModel.set({ ...this.emptyEdit });
+    this.editDateError.set('');
+    this.editCheckingDate.set(false);
+  }
+
+  onEditDateChange(date: string): void {
+    const order = this.editing();
+    if (!order) return;
+
+    this.editDateError.set('');
+    this.patchEdit({ eventDate: date });
+
+    if (!date) return;
+
+    this.editCheckingDate.set(true);
+    this.orderService.getCountByDateExcluding(date, order.id).subscribe({
+      next: (count) => {
+        if (count >= 2) {
+          this.editDateError.set('התאריך שבחרת עמוס מדי, אנא בחר תאריך אחר');
+        }
+        this.editCheckingDate.set(false);
+      },
+      error: () => this.editCheckingDate.set(false),
+    });
+  }
+
+  patchEdit(patch: Partial<OrderEditModel>): void {
+    this.editModel.update((m) => ({ ...m, ...patch }));
+  }
+
+  onPackageChange(newPkgId: string): void {
+    // Switching the package clears dish selections since limits may differ.
+    this.editModel.update((m) => ({ ...m, packageId: newPkgId, selectedItems: [] }));
+  }
+
+  editCountFor(category: string): number {
+    const catDishIds = this.allDishes()
+      .filter((d) => d.category === category)
+      .map((d) => d.id);
+    return this.editModel().selectedItems.filter((id) => catDishIds.includes(id)).length;
+  }
+
+  isDishSelected(dishId: string): boolean {
+    return this.editModel().selectedItems.includes(dishId);
+  }
+
+  toggleDishEdit(category: string, dishId: string, limit: number): void {
+    const catDishIds = this.allDishes()
+      .filter((d) => d.category === category)
+      .map((d) => d.id);
+    const currentCount = this.editModel().selectedItems.filter((id) => catDishIds.includes(id)).length;
+
+    this.editModel.update((m) => {
+      if (m.selectedItems.includes(dishId)) {
+        return { ...m, selectedItems: m.selectedItems.filter((id) => id !== dishId) };
+      }
+      if (currentCount >= limit) return m;
+      return { ...m, selectedItems: [...m.selectedItems, dishId] };
+    });
   }
 
   saveEdit(): void {
     const order = this.editing();
     if (!order) return;
+    if (this.editCheckingDate()) return;
+    if (this.editDateError()) return;
 
     this.saving.set(true);
+    const m = this.editModel();
     const dto: UpdateOrderDto = {
-      numberOfGuests: Number(this.editModel.numberOfGuests),
-      eventDate: this.editModel.eventDate,
-      address: this.editModel.address,
-      isApproved: this.editModel.isApproved,
+      packageId: m.packageId,
+      selectedItems: m.selectedItems,
+      numberOfGuests: Number(m.numberOfGuests),
+      eventDate: m.eventDate,
+      address: m.address,
+      isApproved: m.isApproved,
     };
 
     this.orderService.update(order.id, dto).subscribe({
@@ -380,7 +607,10 @@ export class AdminOrdersComponent implements OnInit {
         this.closeEdit();
         this.toast.show('ההזמנה עודכנה בהצלחה', 'success');
       },
-      error: () => this.saving.set(false),
+      error: (e: { error?: { message?: string } }) => {
+        this.toast.show(e.error?.message || 'עדכון ההזמנה נכשל', 'error');
+        this.saving.set(false);
+      },
     });
   }
 

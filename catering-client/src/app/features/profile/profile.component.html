@@ -64,13 +64,25 @@
                   <span class="order-value">₪{{ order.totalPrice }}</span>
                 </div>
               </div>
-              @if (canCancel(order)) {
-                <button
-                  class="btn-cancel"
-                  (click)="cancelOrder(order)"
-                  aria-label="ביטול הזמנה"
-                >ביטול הזמנה</button>
-              }
+              <div class="order-card-actions">
+                @if (canEdit(order)) {
+                  <button
+                    class="btn-edit-order"
+                    (click)="openEdit(order)"
+                    [disabled]="catalogLoading()"
+                    aria-label="עריכת הזמנה"
+                  >
+                    {{ catalogLoading() ? 'טוען...' : 'עריכת הזמנה' }}
+                  </button>
+                }
+                @if (canCancel(order)) {
+                  <button
+                    class="btn-cancel"
+                    (click)="cancelOrder(order)"
+                    aria-label="ביטול הזמנה"
+                  >ביטול הזמנה</button>
+                }
+              </div>
             </div>
           }
         </div>
@@ -78,3 +90,165 @@
     </div>
   </div>
 </div>
+
+<!-- Edit Order Modal -->
+@if (editState(); as state) {
+  <div
+    class="modal-overlay"
+    role="button"
+    tabindex="0"
+    (click)="closeEdit()"
+    (keydown.escape)="closeEdit()"
+  >
+    <div
+      class="modal-box"
+      role="presentation"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <h2 class="modal-title">עריכת הזמנה</h2>
+
+      <ol class="edit-steps">
+        <li [class.active]="state.step === 1" [class.done]="state.step > 1">1. חבילה ומנות</li>
+        <li [class.active]="state.step === 2">2. פרטי האירוע</li>
+      </ol>
+
+      <!-- Step 1: Package + Dishes -->
+      @if (state.step === 1) {
+        <div class="edit-step">
+          <div class="form-group">
+            <label for="edit-pkg">חבילה</label>
+            <select
+              id="edit-pkg"
+              [ngModel]="state.packageId"
+              (ngModelChange)="onEditPackageChange($event)"
+            >
+              @for (pkg of packages(); track pkg.id) {
+                <option [value]="pkg.id">{{ pkg.name }} — ₪{{ pkg.pricePerPerson }} לאדם</option>
+              }
+            </select>
+          </div>
+
+          @if (editCategories().length > 0) {
+            <div class="dishes-section">
+              <p class="dishes-hint">בחר מנות לפי הקטגוריות שבחבילה</p>
+              @for (cat of editCategories(); track cat.key) {
+                <div class="cat-block">
+                  <div class="cat-head">
+                    <span class="cat-name">{{ cat.label }}</span>
+                    <span
+                      class="cat-count"
+                      [class.complete]="editCountFor(cat.key) === cat.limit"
+                    >{{ editCountFor(cat.key) }}/{{ cat.limit }}</span>
+                  </div>
+                  <div class="dish-checks">
+                    @for (dish of cat.dishes; track dish.id) {
+                      <label
+                        class="dish-check"
+                        [class.disabled]="!isEditDishSelected(dish.id) && editCountFor(cat.key) >= cat.limit"
+                      >
+                        <input
+                          type="checkbox"
+                          [checked]="isEditDishSelected(dish.id)"
+                          [disabled]="!isEditDishSelected(dish.id) && editCountFor(cat.key) >= cat.limit"
+                          (change)="toggleEditDish(cat.key, dish.id, cat.limit)"
+                        />
+                        {{ dish.name }}
+                      </label>
+                    }
+                    @if (cat.dishes.length === 0) {
+                      <span class="no-dishes">אין מנות בקטגוריה זו</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="step-actions">
+            @if (editSelectionComplete()) {
+              <button type="button" class="btn-primary" (click)="goToEditStep2()">
+                המשך לפרטי האירוע
+              </button>
+            } @else {
+              <button type="button" class="btn-primary" disabled>
+                יש להשלים את בחירת המנות
+              </button>
+            }
+            <button type="button" class="btn-secondary" (click)="closeEdit()">ביטול</button>
+          </div>
+        </div>
+      }
+
+      <!-- Step 2: Event Details -->
+      @if (state.step === 2) {
+        <form (ngSubmit)="submitEdit()" class="edit-form-step2">
+          <div class="form-group">
+            <label for="edit-guests">מספר אורחים *</label>
+            <input
+              id="edit-guests"
+              type="number"
+              min="1"
+              [ngModel]="state.numberOfGuests"
+              (ngModelChange)="updateEditField('numberOfGuests', $event)"
+              name="editGuests"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-date">תאריך האירוע *</label>
+            <input
+              id="edit-date"
+              type="date"
+              [ngModel]="state.eventDate"
+              (ngModelChange)="onEditDateChange($event)"
+              name="editDate"
+              required
+            />
+            @if (editCheckingDate()) {
+              <span class="date-hint">בודק זמינות תאריך...</span>
+            }
+            @if (editDateError()) {
+              <span class="error-msg">{{ editDateError() }}</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="edit-address">כתובת האירוע *</label>
+            <input
+              id="edit-address"
+              [ngModel]="state.address"
+              (ngModelChange)="updateEditField('address', $event)"
+              name="editAddress"
+              required
+              placeholder="רחוב, עיר"
+            />
+          </div>
+
+          <p class="total-estimate">
+            <span class="total-label">סה״כ משוער:</span>
+            <span class="gold-text">₪{{ editEstimatedTotal() }}</span>
+          </p>
+
+          @if (editError()) {
+            <p class="error-msg">{{ editError() }}</p>
+          }
+
+          <div class="step-actions">
+            <button
+              type="submit"
+              class="btn-primary"
+              [disabled]="editSaving() || editCheckingDate() || !!editDateError()"
+            >
+              {{ editSaving() ? 'שומר...' : editCheckingDate() ? 'בודק תאריך...' : 'שמור שינויים' }}
+            </button>
+            <button type="button" class="btn-secondary" (click)="backToEditStep1()">
+              → חזרה לבחירת מנות
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  </div>
+}

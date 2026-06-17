@@ -5,6 +5,7 @@ import { PackageService } from '../../packages/package.service';
 import { PackageFormComponent } from '../../packages/package-form/package-form.component';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { ToastService } from '../../../core/services/toast.service';
+import { formatPackageLimitsSummary } from '../../../core/constants/categories';
 
 @Component({
   selector: 'app-admin-packages',
@@ -29,12 +30,14 @@ import { ToastService } from '../../../core/services/toast.service';
         <div class="admin-table">
           <div class="table-head">
             <span class="col-name">שם החבילה</span>
+            <span class="col-limits">לימיטים</span>
             <span class="col-price">מחיר לאדם</span>
             <span class="col-actions">פעולות</span>
           </div>
           @for (pkg of packages(); track pkg.id) {
             <div class="table-row">
               <span class="col-name">{{ pkg.name }}</span>
+              <span class="col-limits">{{ limitsSummary(pkg) }}</span>
               <span class="col-price">₪{{ pkg.pricePerPerson }}</span>
               <span class="col-actions">
                 <button class="btn-edit" (click)="openEditForm(pkg)">עריכה</button>
@@ -79,6 +82,10 @@ export class AdminPackagesComponent implements OnInit {
   loading = signal(true);
   showForm = signal(false);
   editingPkg = signal<Package | null>(null);
+
+  limitsSummary(pkg: Package): string {
+    return formatPackageLimitsSummary(pkg.limits);
+  }
 
   ngOnInit(): void {
     this.loadPackages();
