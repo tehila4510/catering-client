@@ -1,0 +1,131 @@
+---
+description: Catering Client — project context, ownership boundaries, architecture, and feature conventions
+alwaysApply: true
+---
+
+# Catering Client
+
+Premium Angular 17+ standalone app for a catering service. Consumes REST API at `http://localhost:3000/api`. Luxury dark theme: gold/black/white palette.
+
+**Stack:** Angular 17+ (signals, standalone) | TypeScript strict | SCSS | HttpClient | RxJS
+
+## Collaboration — Read First
+
+Two developers work in parallel. **Respect ownership boundaries.**
+
+### Do NOT modify (Dev 1 — core infrastructure)
+
+- `src/app/app.config.ts`, `src/app/app.routes.ts`
+- `src/app/core/guards/` — auth, admin guards
+- `src/app/core/interceptors/` — auth, error interceptors
+- `src/app/core/models/` — User, Dish, Package, DTOs
+- `src/app/core/services/` — auth, token, toast services
+- `src/app/features/auth/`, `src/app/features/profile/`
+- `src/app/shared/components/navbar/`, `footer/`, `toast/`
+- `src/environments/`
+
+### Your scope (Dev 2 — features, UI, design system)
+
+- `src/styles/` — design tokens, typography, base components
+- `src/app/features/dishes/`, `packages/`, `home/`
+- `src/app/features/admin/admin-dashboard/`
+- `src/app/shared/components/dish-card/`, `package-card/`, `loader/`
+
+Need a new route? Dev 1 owns routing — coordinate before adding.
+
+## Commands
+
+```bash
+npm install && ng serve    # http://localhost:4200
+npm run build && npm run test
+```
+
+Backend must run: `npm run dev` in `catering-server/`
+
+## Angular Patterns
+
+- **Standalone only** — no NgModule; explicitly list all imports
+- **Signals:** `input()`, `output()`, `signal()`, `computed()` — prefer over RxJS subscription chains
+- **Strict TypeScript** — zero `any`
+- **Control flow:** `@if`, `@for`, `@switch` (not `*ngIf`/`*ngFor`)
+- **Auth:** JWT injected by `auth.interceptor.ts` — never attach tokens manually
+- **Admin check:** `authService.isAdmin` signal — no hardcoded role checks
+- **Feedback:** `ToastService.success()` / `.error()` for user messages
+- **Models:** use existing types from `src/app/core/models/` — do not redefine
+
+## Styling
+
+Use SCSS variables from `src/styles/_variables.scss` — never hardcode colors.
+
+| Token | Value | Use |
+|-------|-------|-----|
+| Gold | `#C9A84C` | Primary accent |
+| Gold Light | `#E8D5A3` | Hover |
+| Gold Dark | `#A07830` | Pressed |
+| Black | `#111111` | Background |
+| Black Soft | `#1E1E1E` | Cards |
+| White | `#F9F9F9` | Text |
+| White Dim | `#E0E0E0` | Secondary text |
+| Gray | `#5C5C5C` | Muted/disabled |
+
+Typography: Playfair Display (headings), Inter (body/UI). Radius: 6px / 12px / 20px. Grid: 3 cols desktop → 2 tablet → 1 mobile.
+
+## API Integration
+
+Base URL from `environment.apiUrl` (`/api`).
+
+**Dishes:** `GET/POST /dishes`, `PUT/DELETE /dishes/:id` (write = admin)
+**Packages:** `GET/POST /packages`, `PUT/DELETE /packages/:id` (write = admin)
+
+Service pattern — inject `HttpClient`, use typed responses:
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class DishService {
+  private apiUrl = `${environment.apiUrl}/dishes`;
+  getAll() { return this.http.get<Dish[]>(this.apiUrl); }
+  create(dish: Partial<Dish>) { return this.http.post<Dish>(this.apiUrl, dish); }
+  update(id: string, dish: Partial<Dish>) { return this.http.put<Dish>(`${this.apiUrl}/${id}`, dish); }
+  delete(id: string) { return this.http.delete<void>(`${this.apiUrl}/${id}`); }
+}
+```
+
+## Component Conventions
+
+- Loading states: `isLoading = signal(false)` + shared `LoaderComponent`
+- Lists: load in `ngOnInit`, render grid of card components
+- Forms: validate before submit, disable submit while saving, emit `onSaved` after success
+- Delete: confirm dialog before API call, reload list on success
+
+## Feature Checklist
+
+**Design system:** `_variables.scss`, `_typography.scss`, `styles.scss`, responsive grid, button states, card hover effects
+
+**Dishes:** DishService, DishListComponent, DishCardComponent, DishDetailComponent (`/dishes/:id`), DishFormComponent (admin)
+
+**Packages:** PackageService, PackageListComponent, PackageCardComponent, PackageDetailComponent (`/packages/:id`), PackageFormComponent (admin)
+
+**Home:** Hero + Unsplash bg, featured dishes/packages carousels (first 3 from API), CTAs
+
+**Admin:** Sidebar (Manage Dishes/Packages), content area for forms, route `/admin/dashboard` (admin guard)
+
+**Shared:** LoaderComponent — gold spinning ring on all API calls
+
+## Image URLs (Unsplash)
+
+```
+Hero:     https://images.unsplash.com/photo-1555244162-803834f70033?w=1400
+Event:    https://images.unsplash.com/photo-1530062845289-9109b2c9c868?w=800
+Dining:   https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800
+Platter:  https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800
+Dish:     https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800
+Elegant:  https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800
+```
+
+## Pitfalls
+
+- Do not add JWT manually — interceptor handles it
+- Do not use NgModule or `any`
+- Do not modify Dev 1 files without coordination
+- Use loader on every async API call
+- Import SCSS variables in component styles — no inline hex colors
