@@ -131,10 +131,6 @@ export class OrderService {
     const usr = o.userId;
     const userName = typeof usr === 'string' ? '' : (usr?.name ?? '');
 
-    // #region agent log
-    fetch('http://127.0.0.1:7472/ingest/1efcf1af-9ffc-46cb-be5f-a6ada37ad3ff',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'343f7b'},body:JSON.stringify({sessionId:'343f7b',hypothesisId:'C',location:'order.service.ts:toFullModel',message:'client received userId (keys only, no PII values)',data:{userIdType:typeof usr,keys:usr&&typeof usr==='object'?Object.keys(usr as object):null,hasNameValue:!!(usr&&typeof usr!=='string'&&usr.name),hasFullNameValue:!!(usr&&typeof usr!=='string'&&(usr as {fullName?:string}).fullName),computedUserNameEmpty:!userName},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-
     const dishes = (o.selectedItems ?? []).map((d) => ({
       id: d._id ?? d.id ?? '',
       name: d.name ?? '',

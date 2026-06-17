@@ -462,7 +462,10 @@ export class AdminOrdersComponent implements OnInit {
     this.details.set(null);
     this.orderService.getFullDetails(order.id).subscribe({
       next: (data) => {
-        this.details.set(data);
+        this.details.set({
+          ...data,
+          userName: data.userName || order.userName,
+        });
         this.detailsLoading.set(false);
       },
       error: () => {
