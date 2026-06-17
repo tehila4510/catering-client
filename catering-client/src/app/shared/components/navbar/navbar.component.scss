@@ -33,6 +33,7 @@ $gray: #5c5c5c;
   text-decoration: none;
   letter-spacing: 0.03em;
   flex-shrink: 0;
+  cursor: pointer;
 
   &:hover {
     color: $gold-light;
@@ -50,41 +51,29 @@ $gray: #5c5c5c;
   li a,
   li .nav-logout {
     display: block;
-    padding: 0.4rem 0.75rem;
+    padding: 0.45rem 0.85rem;
     color: $white-dim;
     text-decoration: none;
     font-family: 'Heebo', sans-serif;
     font-size: 0.95rem;
     border-radius: 6px;
-    transition: color 0.2s ease;
-    position: relative;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
     background: none;
-    border: none;
+    border: 1px solid transparent;
     cursor: pointer;
     font-weight: 400;
 
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -2px;
-      right: 0;
-      width: 0;
-      height: 2px;
-      background-color: $gold;
-      transition: width 0.2s ease;
-    }
-
-    &:hover,
-    &.active {
+    &:hover {
       color: $gold;
-
-      &::after {
-        width: 100%;
-      }
+      background: rgba($gold, 0.1);
+      border-color: rgba($gold, 0.3);
     }
 
     &.active {
       color: $gold;
+      background: rgba($gold, 0.15);
+      border-color: rgba($gold, 0.4);
+      font-weight: 600;
     }
   }
 

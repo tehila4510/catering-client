@@ -1,8 +1,10 @@
-import { Component, OnInit, computed, signal, inject } from '@angular/core';
+import { Component, OnInit, computed, signal, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { map } from 'rxjs/operators';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter, map } from 'rxjs/operators';
 import { forkJoin } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
@@ -50,10 +52,12 @@ interface OrderEditState {
 export class ProfileComponent implements OnInit {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
+  private router = inject(Router);
   private orderService = inject(OrderService);
   private packageService = inject(PackageService);
   private dishService = inject(DishService);
   private toast = inject(ToastService);
+  private destroyRef = inject(DestroyRef);
 
   user = signal<User | null>(null);
   orders = signal<Order[]>([]);
@@ -108,6 +112,14 @@ export class ProfileComponent implements OnInit {
       .subscribe((u) => this.user.set(u));
 
     this.loadOrders();
+
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        filter((event) => event.urlAfterRedirects.startsWith('/profile')),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => this.loadOrders());
   }
 
   loadOrders(): void {
