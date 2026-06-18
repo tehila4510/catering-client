@@ -14,7 +14,18 @@ import { PackageCardComponent } from '../components/package-card/package-card.co
 import { AgentChatService, ToolResult } from './agent-chat.service';
 
 type MessageContentType = 'text' | 'cards';
-type CardKind = 'dishes' | 'packages';
+type CardKind = 'dishes' | 'packages' | 'orders';
+
+/** Lightweight order summary rendered inline in the chat (no dedicated card component). */
+export interface OrderCard {
+  id: string;
+  packageName: string;
+  numberOfGuests: number;
+  eventDate: string;
+  address: string;
+  totalPrice: number;
+  isApproved: boolean;
+}
 
 export interface ChatMessage {
   role: 'user' | 'agent';
@@ -24,6 +35,7 @@ export interface ChatMessage {
   cardKind?: CardKind;
   dishes?: Dish[];
   packages?: Package[];
+  orders?: OrderCard[];
 }
 
 @Component({
@@ -42,7 +54,7 @@ export class AgentChatWidgetComponent {
     {
       role: 'agent',
       contentType: 'text',
-      text: 'שלום! אני העוזר החכם של קייטרינג המלך 👑\nאני יכול לעזור לך לגלות מנות וחבילות. במה אוכל לעזור?',
+      text: 'שלום! אני העוזר החכם של קייטרינג המלך 👑\nאני יכול לעזור לך לגלות מנות וחבילות, לבצע הזמנה ולצפות בהזמנות שלך. במה אוכל לעזור?',
       timestamp: new Date(),
     },
   ]);
@@ -119,6 +131,15 @@ export class AgentChatWidgetComponent {
           packages: result.data.map((p) => this.toPackage(p)),
           timestamp: new Date(),
         });
+      } else if (result.name === 'getOrdersByUser' || result.name === 'createOrder') {
+        // Both an order list and a freshly created order arrive as an array of order docs.
+        this.pushMessage({
+          role: 'agent',
+          contentType: 'cards',
+          cardKind: 'orders',
+          orders: result.data.map((o) => this.toOrder(o)),
+          timestamp: new Date(),
+        });
       }
     }
   }
@@ -151,6 +172,33 @@ export class AgentChatWidgetComponent {
       featured: p.featured,
       imageUrl: p.imageUrl,
     };
+  }
+
+  private toOrder(o: any): OrderCard {
+    // packageId may arrive populated ({ packageName }) or as a bare id string.
+    const pkg = o.packageId;
+    const packageName =
+      pkg && typeof pkg === 'object' ? (pkg.packageName ?? '') : '';
+
+    return {
+      id: o._id ?? o.id ?? '',
+      packageName,
+      numberOfGuests: o.numberOfGuests ?? 0,
+      eventDate: o.eventDate ?? '',
+      address: o.address ?? '',
+      totalPrice: o.totalPrice ?? 0,
+      isApproved: !!o.isApproved,
+    };
+  }
+
+  formatOrderDate(date: string): string {
+    if (!date) return '';
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? date : d.toLocaleDateString('he-IL');
+  }
+
+  orderStatus(order: OrderCard): string {
+    return order.isApproved ? 'מאושרת' : 'ממתינה לאישור';
   }
 
   private pushMessage(msg: ChatMessage): void {

@@ -51,6 +51,23 @@
                   </div>
                 }
               }
+              @if (msg.cardKind === 'orders') {
+                @for (order of msg.orders; track order.id) {
+                  <div class="order-card">
+                    <div class="order-card-head">
+                      <span class="order-pkg">{{ order.packageName || 'הזמנה' }}</span>
+                      <span
+                        class="order-status"
+                        [class.approved]="order.isApproved"
+                      >{{ orderStatus(order) }}</span>
+                    </div>
+                    <div class="order-row"><span>📅 תאריך:</span><span>{{ formatOrderDate(order.eventDate) }}</span></div>
+                    <div class="order-row"><span>👥 אורחים:</span><span>{{ order.numberOfGuests }}</span></div>
+                    <div class="order-row"><span>📍 כתובת:</span><span>{{ order.address }}</span></div>
+                    <div class="order-row total"><span>💰 סה״כ:</span><span>₪{{ order.totalPrice }}</span></div>
+                  </div>
+                }
+              }
             </div>
           }
 
@@ -79,7 +96,7 @@
         class="chat-input"
         [(ngModel)]="inputText"
         (keydown)="onKeyDown($event)"
-        placeholder="שאל על מנות, חבילות..."
+        placeholder="שאל על מנות, חבילות, או בצע הזמנה..."
         rows="1"
         [disabled]="isLoading()"
         aria-label="הזן הודעה"

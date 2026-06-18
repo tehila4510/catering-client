@@ -273,6 +273,69 @@
   }
 }
 
+// Inline order summary card (rendered from order tool results)
+.order-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  border-radius: $radius-md;
+  padding: 0.7rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: $white;
+
+  .order-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .order-pkg {
+    font-weight: 700;
+    color: $gold;
+    font-size: 0.9rem;
+  }
+
+  .order-status {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    color: $white;
+    white-space: nowrap;
+
+    &.approved {
+      background: rgba(76, 175, 80, 0.25);
+      color: #9be29e;
+    }
+  }
+
+  .order-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.85);
+
+    span:first-child {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    &.total {
+      font-weight: 700;
+      color: $gold;
+
+      span:first-child {
+        color: $gold;
+      }
+    }
+  }
+}
+
 // Input
 .input-row {
   display: flex;
