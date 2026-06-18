@@ -2,6 +2,7 @@ import { Component, signal, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { AgentChatService } from '../../agent-chat-widget/agent-chat.service';
 
 @Component({
   selector: 'app-navbar',
@@ -12,6 +13,7 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class NavbarComponent {
   auth = inject(AuthService);
+  agentChat = inject(AgentChatService);
 
   menuOpen = signal(false);
 
@@ -21,6 +23,11 @@ export class NavbarComponent {
 
   closeMenu(): void {
     this.menuOpen.set(false);
+  }
+
+  openChat(): void {
+    this.closeMenu();
+    this.agentChat.open();
   }
 
   logout(): void {

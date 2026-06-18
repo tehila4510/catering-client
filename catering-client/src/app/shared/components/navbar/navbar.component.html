@@ -31,6 +31,9 @@
 
       @if (auth.isLoggedIn()) {
         <li>
+          <button class="nav-chat-btn" (click)="openChat()" aria-label="פתח עוזר חכם">💬 עוזר חכם</button>
+        </li>
+        <li>
           <a routerLink="/profile" routerLinkActive="active" (click)="closeMenu()">פרופיל</a>
         </li>
         <li>
