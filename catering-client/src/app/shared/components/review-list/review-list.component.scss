@@ -1,0 +1,114 @@
+@use '../../../../styles/variables' as *;
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.review-card {
+  background: $black-soft;
+  border: 1px solid rgba($gold, 0.18);
+  border-radius: $radius-md;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.review-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.reviewer {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $gold-dark, $gold);
+  color: $black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.reviewer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+
+  .name {
+    color: $white;
+    font-weight: 600;
+    font-size: 0.98rem;
+  }
+
+  .package-tag {
+    color: $gold;
+    font-size: 0.78rem;
+    opacity: 0.85;
+  }
+}
+
+.comment {
+  color: $white-dim;
+  line-height: 1.6;
+  font-size: 0.98rem;
+  white-space: pre-line;
+}
+
+.review-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .date {
+    color: $gray;
+    font-size: 0.82rem;
+  }
+}
+
+.actions {
+  display: inline-flex;
+  gap: 0.75rem;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: $gold;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+
+  &:hover {
+    color: $gold-light;
+    text-decoration: underline;
+  }
+
+  &.danger {
+    color: #e07a7a;
+
+    &:hover {
+      color: #f09a9a;
+    }
+  }
+}
+
+.empty {
+  text-align: center;
+  color: $gray;
+  padding: 2rem 0;
+  font-size: 1rem;
+}
