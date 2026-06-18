@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Component,
   signal,
   inject,
   ViewChild,
   ElementRef,
+  AfterViewInit,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -45,10 +47,22 @@ export interface ChatMessage {
   templateUrl: './agent-chat-widget.component.html',
   styleUrl: './agent-chat-widget.component.scss',
 })
-export class AgentChatWidgetComponent {
+export class AgentChatWidgetComponent implements AfterViewInit {
   chatService = inject(AgentChatService);
 
   @ViewChild('messagesEnd') messagesEnd!: ElementRef;
+
+  ngAfterViewInit(): void {
+    // #region agent log
+    setTimeout(() => {
+      const widget = document.querySelector('.chat-widget') as HTMLElement | null;
+      const fab = document.querySelector('.widget-fab') as HTMLElement | null;
+      const wr = widget?.getBoundingClientRect();
+      const fr = fab?.getBoundingClientRect();
+      fetch('http://127.0.0.1:7472/ingest/1efcf1af-9ffc-46cb-be5f-a6ada37ad3ff',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b9e9ae'},body:JSON.stringify({sessionId:'b9e9ae',hypothesisId:'H1',location:'agent-chat-widget.component.ts:ngAfterViewInit',message:'widget vs fab geometry + pointer-events',data:{widgetRect:wr&&{w:Math.round(wr.width),h:Math.round(wr.height),top:Math.round(wr.top),left:Math.round(wr.left)},widgetPE:widget?getComputedStyle(widget).pointerEvents:null,fabRect:fr&&{w:Math.round(fr.width),h:Math.round(fr.height)},isOpen:this.chatService.isOpen()},timestamp:Date.now()})}).catch((err)=>console.error('[AgentChat] ngAfterViewInit failed:', err));
+    }, 500);
+    // #endregion
+  }
 
   messages = signal<ChatMessage[]>([
     {
@@ -73,6 +87,9 @@ export class AgentChatWidgetComponent {
 
     this.chatService.sendMessage(text).subscribe({
       next: ({ reply, toolResults }) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7472/ingest/1efcf1af-9ffc-46cb-be5f-a6ada37ad3ff',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b9e9ae'},body:JSON.stringify({sessionId:'b9e9ae',hypothesisId:'H5',location:'agent-chat-widget.component.ts:next',message:'chat success',data:{replyLen:reply?.length||0,toolResultsCount:toolResults?.length||0},timestamp:Date.now()})}).catch((err)=>console.error('[AgentChat] sendMessage failed:', err));
+        // #endregion
         if (reply?.trim()) {
           this.pushMessage({
             role: 'agent',
@@ -85,7 +102,11 @@ export class AgentChatWidgetComponent {
         this.isLoading.set(false);
         this.scrollToBottom();
       },
-      error: () => {
+      error: (err) => {
+        // #region agent log
+        console.error('[AgentChat] sendMessage failed:', err);
+        fetch('http://127.0.0.1:7472/ingest/1efcf1af-9ffc-46cb-be5f-a6ada37ad3ff',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b9e9ae'},body:JSON.stringify({sessionId:'b9e9ae',hypothesisId:'H5',location:'agent-chat-widget.component.ts:error',message:'chat error',data:{status:err?.status,statusText:err?.statusText,name:err?.name,message:err?.message,serverMsg:err?.error?.message,isLoadingBefore:this.isLoading()},timestamp:Date.now()})}).catch((err)=>console.error('[AgentChat] sendMessage failed:', err));
+        // #endregion
         this.pushMessage({
           role: 'agent',
           contentType: 'text',

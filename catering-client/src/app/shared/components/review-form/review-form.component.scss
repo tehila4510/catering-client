@@ -1,0 +1,53 @@
+@use '../../../../styles/variables' as *;
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.field-label {
+  color: $white-dim;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+textarea {
+  width: 100%;
+  background: $black;
+  border: 1px solid rgba($gold, 0.25);
+  border-radius: $radius-sm;
+  color: $white;
+  padding: 0.75rem;
+  font-family: $font-body;
+  font-size: 0.98rem;
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: $gold;
+  }
+}
+
+.char-count {
+  align-self: flex-start;
+  color: $gray;
+  font-size: 0.75rem;
+}
+
+.form-error {
+  color: #e07a7a;
+  font-size: 0.9rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+}
