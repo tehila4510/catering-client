@@ -1,22 +1,17 @@
-import { Component, OnInit, computed, signal, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
-import { forkJoin } from 'rxjs';
 
-import {
-  Order,
-  OrderFullDetails,
-  UpdateOrderDto,
-  orderStatusLabel,
-} from '../../../core/models/order.model';
-import { Package } from '../../../core/models/package.model';
-import { Dish } from '../../../core/models/dish.model';
+import { Customer, CustomerService } from './customer.service';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { OrderService } from '../../orders/order.service';
 import { PackageService } from '../../packages/package.service';
 import { DishService } from '../../dishes/dish.service';
-import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { ToastService } from '../../../core/services/toast.service';
 import { CATEGORY_LABELS } from '../../../core/constants/categories';
+import { Order, UpdateOrderDto, orderStatusLabel } from '../../../core/models/order.model';
+import { Package } from '../../../core/models/package.model';
+import { Dish } from '../../../core/models/dish.model';
 
 interface CategoryGroup {
   key: string;
@@ -35,60 +30,27 @@ interface OrderEditModel {
 }
 
 @Component({
-  selector: 'app-admin-orders',
+  selector: 'app-admin-customers',
   standalone: true,
   imports: [FormsModule, DatePipe, LoaderComponent],
   template: `
     <div class="admin-section">
       <div class="section-header">
-        <h1>ניהול הזמנות</h1>
+        <h1>רשימת לקוחות</h1>
+        <p class="subtitle">{{ customers().length }} לקוחות רשומים</p>
       </div>
 
       <div class="filters">
         <input
           class="filter-input"
           type="text"
-          placeholder="חיפוש לפי שם או אימייל לקוח..."
-          [ngModel]="customerTerm()"
-          (ngModelChange)="customerTerm.set($event)"
+          placeholder="חיפוש לפי שם, אימייל או טלפון..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
         />
-        <div class="status-filter">
-          <label class="status-check">
-            <input
-              type="checkbox"
-              [ngModel]="showApproved()"
-              (ngModelChange)="showApproved.set($event)"
-            />
-            מאושר
-          </label>
-          <label class="status-check">
-            <input
-              type="checkbox"
-              [ngModel]="showPending()"
-              (ngModelChange)="showPending.set($event)"
-            />
-            ממתין
-          </label>
-        </div>
-        <div class="date-filter">
-          <label>מתאריך:</label>
-          <input
-            class="filter-input"
-            type="date"
-            [ngModel]="startDate()"
-            (ngModelChange)="startDate.set($event)"
-          />
-        </div>
-        <div class="date-filter">
-          <label>עד תאריך:</label>
-          <input
-            class="filter-input"
-            type="date"
-            [ngModel]="endDate()"
-            (ngModelChange)="endDate.set($event)"
-          />
-        </div>
-        <button class="btn-secondary" (click)="clearFilters()">נקה סינון</button>
+        @if (searchTerm()) {
+          <button class="btn-secondary" (click)="searchTerm.set('')">נקה חיפוש</button>
+        }
       </div>
 
       @if (loading()) {
@@ -96,45 +58,122 @@ interface OrderEditModel {
       }
 
       @if (!loading() && filtered().length === 0) {
-        <div class="empty-state">לא נמצאו הזמנות</div>
+        <div class="empty-state">
+          {{ searchTerm() ? 'לא נמצאו לקוחות התואמים לחיפוש' : 'אין לקוחות רשומים' }}
+        </div>
       }
 
       @if (!loading() && filtered().length > 0) {
-        <div class="orders-grid">
-          @for (order of filtered(); track order.id) {
-            <div class="order-card">
-              <div class="order-header">
-                <span class="customer">{{ order.userName || 'לקוח' }}</span>
-                <span
-                  class="status-badge"
-                  [class.approved]="order.isApproved"
-                  [class.pending]="!order.isApproved"
-                >{{ statusLabel(order) }}</span>
+        <div class="customers-table-wrap">
+          <table class="customers-table">
+            <thead>
+              <tr>
+                <th>שם</th>
+                <th>אימייל</th>
+                <th>טלפון</th>
+                <th>תאריך הרשמה</th>
+                <th>הזמנות</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (customer of filtered(); track customer.id) {
+                <tr>
+                  <td class="name-cell">{{ customer.name }}</td>
+                  <td>{{ customer.email }}</td>
+                  <td>{{ customer.phone || '—' }}</td>
+                  <td>{{ customer.createdAt | date: 'd בMMMM yyyy' : '' : 'he' }}</td>
+                  <td>
+                    <button class="btn-orders" (click)="openOrders(customer)">צפייה בהזמנות</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="customers-cards">
+          @for (customer of filtered(); track customer.id) {
+            <div class="customer-card">
+              <div class="customer-name">{{ customer.name }}</div>
+              <div class="row"><span class="lbl">אימייל:</span><span>{{ customer.email }}</span></div>
+              <div class="row"><span class="lbl">טלפון:</span><span>{{ customer.phone || '—' }}</span></div>
+              <div class="row">
+                <span class="lbl">הרשמה:</span>
+                <span>{{ customer.createdAt | date: 'd בMMMM yyyy' : '' : 'he' }}</span>
               </div>
-              <div class="order-body">
-                <div class="row"><span class="lbl">אימייל:</span><span>{{ order.userEmail }}</span></div>
-                <div class="row"><span class="lbl">חבילה:</span><span>{{ order.packageName }}</span></div>
-                <div class="row"><span class="lbl">מס' אורחים:</span><span>{{ order.numberOfGuests }}</span></div>
-                <div class="row"><span class="lbl">תאריך אירוע:</span><span>{{ order.eventDate | date: 'd בMMMM yyyy' : '' : 'he' }}</span></div>
-                <div class="row"><span class="lbl">כתובת:</span><span>{{ order.address }}</span></div>
-                <div class="row"><span class="lbl">מחיר כולל:</span><span>₪{{ order.totalPrice }}</span></div>
-              </div>
-              <div class="order-actions">
-                <button class="btn-details" (click)="openDetails(order)">פרטים מלאים</button>
-                @if (!order.isApproved) {
-                  <button class="btn-edit" (click)="openEdit(order)">עדכון</button>
-                  <button class="btn-delete" (click)="deleteOrder(order)">מחיקה</button>
-                }
-              </div>
+              <button class="btn-orders full" (click)="openOrders(customer)">צפייה בהזמנות</button>
             </div>
           }
         </div>
       }
 
-      <!-- Edit Modal -->
-      @if (editing(); as order) {
+      <!-- Customer orders modal -->
+      @if (selectedCustomer(); as customer) {
         <div
           class="modal-overlay"
+          role="button"
+          tabindex="0"
+          (click)="closeOrders()"
+          (keydown.escape)="closeOrders()"
+        >
+          <div
+            class="modal-box"
+            role="presentation"
+            (click)="$event.stopPropagation()"
+            (keydown)="$event.stopPropagation()"
+          >
+            <div class="modal-header">
+              <h2>ההזמנות של {{ customer.name }}</h2>
+              <button class="modal-close" (click)="closeOrders()" aria-label="סגירה">✕</button>
+            </div>
+
+            @if (ordersLoading()) {
+              <app-loader />
+            }
+
+            @if (!ordersLoading() && customerOrders().length === 0) {
+              <div class="empty-state">לקוח זה עדיין לא ביצע הזמנות</div>
+            }
+
+            @if (!ordersLoading() && customerOrders().length > 0) {
+              <div class="orders-list">
+                @for (order of customerOrders(); track order.id) {
+                  <div class="order-item">
+                    <div class="order-item-header">
+                      <span class="pkg">{{ order.packageName || 'חבילה' }}</span>
+                      <span
+                        class="status-badge"
+                        [class.approved]="order.isApproved"
+                        [class.pending]="!order.isApproved"
+                      >{{ statusLabel(order) }}</span>
+                    </div>
+                    <div class="row"><span class="lbl">מס' אורחים:</span><span>{{ order.numberOfGuests }}</span></div>
+                    <div class="row"><span class="lbl">תאריך אירוע:</span><span>{{ order.eventDate | date: 'd בMMMM yyyy' : '' : 'he' }}</span></div>
+                    <div class="row"><span class="lbl">כתובת:</span><span>{{ order.address }}</span></div>
+                    <div class="row"><span class="lbl">מחיר כולל:</span><span>₪{{ order.totalPrice }}</span></div>
+
+                    @if (!order.isApproved) {
+                      <div class="order-item-actions">
+                        <button
+                          class="btn-approve"
+                          [disabled]="approvingId() === order.id"
+                          (click)="approveOrder(order)"
+                        >{{ approvingId() === order.id ? 'מאשר...' : 'אשר הזמנה' }}</button>
+                        <button class="btn-edit" (click)="openEdit(order)">עריכה</button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Edit order modal -->
+      @if (editing(); as order) {
+        <div
+          class="modal-overlay edit-overlay"
           role="button"
           tabindex="0"
           (click)="closeEdit()"
@@ -146,14 +185,15 @@ interface OrderEditModel {
             (click)="$event.stopPropagation()"
             (keydown)="$event.stopPropagation()"
           >
-            <h2>עדכון הזמנה</h2>
+            <div class="modal-header">
+              <h2>עריכת הזמנה</h2>
+              <button class="modal-close" (click)="closeEdit()" aria-label="סגירה">✕</button>
+            </div>
 
             @if (editLoadingDetails()) {
               <app-loader />
             } @else {
               <form (ngSubmit)="saveEdit()" class="edit-form">
-
-                <!-- Package selector -->
                 <div class="form-group">
                   <label for="ord-pkg">חבילה</label>
                   <select
@@ -169,7 +209,6 @@ interface OrderEditModel {
                   </select>
                 </div>
 
-                <!-- Dish selection by category -->
                 @if (editCategories().length > 0) {
                   <div class="dishes-section">
                     <h3 class="dishes-title">בחירת מנות</h3>
@@ -276,107 +315,35 @@ interface OrderEditModel {
           </div>
         </div>
       }
-
-      <!-- Details Modal -->
-      @if (detailsOpen()) {
-        <div
-          class="modal-overlay"
-          role="button"
-          tabindex="0"
-          (click)="closeDetails()"
-          (keydown.escape)="closeDetails()"
-        >
-          <div
-            class="modal-box details-box"
-            role="presentation"
-            (click)="$event.stopPropagation()"
-            (keydown)="$event.stopPropagation()"
-          >
-            <h2>פרטי הזמנה מלאים</h2>
-
-            @if (detailsLoading()) {
-              <app-loader />
-            } @else if (details(); as d) {
-              <section class="details-section">
-                <h3>פרטי לקוח</h3>
-                <div class="row"><span class="lbl">שם מלא:</span><span>{{ d.userName || '—' }}</span></div>
-                <div class="row"><span class="lbl">אימייל:</span><span>{{ d.userEmail || '—' }}</span></div>
-              </section>
-
-              <section class="details-section">
-                <h3>פרטי האירוע</h3>
-                <div class="row"><span class="lbl">חבילה:</span><span>{{ d.packageName || '—' }}</span></div>
-                <div class="row"><span class="lbl">תאריך אירוע:</span><span>{{ d.eventDate | date: 'dd/MM/yyyy' }}</span></div>
-                <div class="row"><span class="lbl">כתובת:</span><span>{{ d.address }}</span></div>
-                <div class="row"><span class="lbl">מס' אורחים:</span><span>{{ d.numberOfGuests }}</span></div>
-                <div class="row"><span class="lbl">מחיר כולל:</span><span>₪{{ d.totalPrice }}</span></div>
-                <div class="row">
-                  <span class="lbl">סטטוס:</span>
-                  <span
-                    class="status-badge"
-                    [class.approved]="d.isApproved"
-                    [class.pending]="!d.isApproved"
-                  >{{ statusLabelFor(d.isApproved) }}</span>
-                </div>
-              </section>
-
-              <section class="details-section">
-                <h3>מנות נבחרות</h3>
-                @if (dishGroups().length === 0) {
-                  <p class="muted">לא נבחרו מנות</p>
-                } @else {
-                  @for (group of dishGroups(); track group.label) {
-                    <div class="dish-group">
-                      <h4>{{ group.label }}</h4>
-                      <ul>
-                        @for (name of group.dishes; track name) {
-                          <li>{{ name }}</li>
-                        }
-                      </ul>
-                    </div>
-                  }
-                }
-              </section>
-
-              <div class="form-actions">
-                @if (!d.isApproved) {
-                  <button type="button" class="btn-primary" (click)="openEditFromDetails()">עדכון סטטוס</button>
-                }
-                <button type="button" class="btn-secondary" (click)="closeDetails()">סגירה</button>
-              </div>
-            }
-          </div>
-        </div>
-      }
     </div>
   `,
-  styleUrl: './admin-orders.component.scss',
+  styleUrl: './admin-customers.component.scss',
 })
-export class AdminOrdersComponent implements OnInit {
+export class AdminCustomersComponent implements OnInit {
+  private customerService = inject(CustomerService);
   private orderService = inject(OrderService);
   private packageService = inject(PackageService);
   private dishService = inject(DishService);
   private toast = inject(ToastService);
 
-  orders = signal<Order[]>([]);
+  customers = signal<Customer[]>([]);
+  loading = signal(true);
+  searchTerm = signal('');
+
+  selectedCustomer = signal<Customer | null>(null);
+  customerOrders = signal<Order[]>([]);
+  ordersLoading = signal(false);
+  approvingId = signal<string | null>(null);
+
   packages = signal<Package[]>([]);
   allDishes = signal<Dish[]>([]);
-  loading = signal(true);
-  saving = signal(false);
+  private refDataLoaded = false;
+
   editing = signal<Order | null>(null);
   editLoadingDetails = signal(false);
+  saving = signal(false);
   editCheckingDate = signal(false);
   editDateError = signal('');
-
-  detailsOpen = signal(false);
-  detailsLoading = signal(false);
-  details = signal<OrderFullDetails | null>(null);
-
-  customerTerm = signal('');
-  startDate = signal('');
-  endDate = signal('');
-  showApproved = signal(true);
-  showPending = signal(true);
 
   private readonly emptyEdit: OrderEditModel = {
     packageId: '',
@@ -387,30 +354,19 @@ export class AdminOrdersComponent implements OnInit {
     isApproved: false,
   };
 
-  // Signal so computed() tracks changes reactively.
   editModel = signal<OrderEditModel>({ ...this.emptyEdit });
 
-  private readonly categoryOrder: { key: string; label: string }[] = [
-    { key: 'starters', label: 'מנות ראשונות' },
-    { key: 'mainCourses', label: 'מנות עיקריות' },
-    { key: 'salads', label: 'סלטים' },
-    { key: 'desserts', label: 'קינוחים' },
-    { key: 'breads', label: 'לחמים' },
-    { key: 'drinks', label: 'משקאות' },
-  ];
-
-  dishGroups = computed(() => {
-    const d = this.details();
-    if (!d) return [];
-    return this.categoryOrder
-      .map((c) => ({
-        label: c.label,
-        dishes: d.dishes.filter((dish) => dish.category === c.key).map((dish) => dish.name),
-      }))
-      .filter((group) => group.dishes.length > 0);
+  filtered = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    if (!term) return this.customers();
+    return this.customers().filter(
+      (c) =>
+        c.name.toLowerCase().includes(term) ||
+        c.email.toLowerCase().includes(term) ||
+        c.phone.toLowerCase().includes(term),
+    );
   });
 
-  // Reactive: re-computes when editModel signal or packages/dishes signals change.
   editCategories = computed<CategoryGroup[]>(() => {
     const m = this.editModel();
     const pkg = this.packages().find((p) => p.id === m.packageId);
@@ -433,99 +389,69 @@ export class AdminOrdersComponent implements OnInit {
     return pkg.pricePerPerson * (Number(m.numberOfGuests) || 0);
   });
 
-  filtered = computed(() => {
-    const term = this.customerTerm().trim().toLowerCase();
-    const start = this.startDate();
-    const end = this.endDate();
-    const showApproved = this.showApproved();
-    const showPending = this.showPending();
-
-    return this.orders().filter((o) => {
-      const matchesCustomer =
-        !term ||
-        o.userName.toLowerCase().includes(term) ||
-        o.userEmail.toLowerCase().includes(term);
-
-      const eventDay = o.eventDate ? o.eventDate.substring(0, 10) : '';
-      const matchesStart = !start || (eventDay && eventDay >= start);
-      const matchesEnd = !end || (eventDay && eventDay <= end);
-
-      const matchesApproval =
-        !showApproved && !showPending
-          ? false
-          : (showApproved && o.isApproved) || (showPending && !o.isApproved);
-
-      return matchesCustomer && matchesStart && matchesEnd && matchesApproval;
-    });
-  });
-
   ngOnInit(): void {
-    forkJoin({
-      orders: this.orderService.getAll(),
-      packages: this.packageService.getAll(),
-      dishes: this.dishService.getAll(),
-    }).subscribe({
-      next: ({ orders, packages, dishes }) => {
-        this.orders.set(orders);
-        this.packages.set(packages);
-        this.allDishes.set(dishes);
+    this.loadCustomers();
+  }
+
+  loadCustomers(): void {
+    this.loading.set(true);
+    this.customerService.getAll().subscribe({
+      next: (data) => {
+        this.customers.set(data);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
   }
 
+  openOrders(customer: Customer): void {
+    this.selectedCustomer.set(customer);
+    this.customerOrders.set([]);
+    this.ordersLoading.set(true);
+    this.orderService.getByCustomer(customer.id).subscribe({
+      next: (orders) => {
+        this.customerOrders.set(orders);
+        this.ordersLoading.set(false);
+      },
+      error: () => this.ordersLoading.set(false),
+    });
+  }
+
+  closeOrders(): void {
+    this.selectedCustomer.set(null);
+    this.customerOrders.set([]);
+  }
+
   statusLabel(order: Order): string {
     return orderStatusLabel(order);
   }
 
-  statusLabelFor(isApproved: boolean): string {
-    return orderStatusLabel({ isApproved });
-  }
-
-  openDetails(order: Order): void {
-    this.detailsOpen.set(true);
-    this.detailsLoading.set(true);
-    this.details.set(null);
-    this.orderService.getFullDetails(order.id).subscribe({
-      next: (data) => {
-        this.details.set({
-          ...data,
-          userName: data.userName || order.userName,
-        });
-        this.detailsLoading.set(false);
+  approveOrder(order: Order): void {
+    this.approvingId.set(order.id);
+    this.orderService.update(order.id, { isApproved: true }).subscribe({
+      next: (updated) => {
+        this.customerOrders.update((list) =>
+          list.map((o) => (o.id === updated.id ? { ...o, ...updated } : o)),
+        );
+        this.approvingId.set(null);
+        this.toast.show('ההזמנה אושרה בהצלחה', 'success');
       },
-      error: () => {
-        this.detailsLoading.set(false);
-        this.closeDetails();
-        this.toast.show('שגיאה בטעינת פרטי ההזמנה', 'error');
+      error: (e: { error?: { message?: string } }) => {
+        this.toast.show(e.error?.message || 'אישור ההזמנה נכשל', 'error');
+        this.approvingId.set(null);
       },
     });
   }
 
-  closeDetails(): void {
-    this.detailsOpen.set(false);
-    this.details.set(null);
-  }
-
-  openEditFromDetails(): void {
-    const d = this.details();
-    if (!d) return;
-    const order = this.orders().find((o) => o.id === d.id);
-    this.closeDetails();
-    if (order) this.openEdit(order);
-  }
-
-  clearFilters(): void {
-    this.customerTerm.set('');
-    this.startDate.set('');
-    this.endDate.set('');
-    this.showApproved.set(true);
-    this.showPending.set(true);
+  private ensureRefData(): void {
+    if (this.refDataLoaded) return;
+    this.packageService.getAll().subscribe((pkgs) => this.packages.set(pkgs));
+    this.dishService.getAll().subscribe((dishes) => this.allDishes.set(dishes));
+    this.refDataLoaded = true;
   }
 
   openEdit(order: Order): void {
-    // Show the modal immediately with basic data; fill in dish selections once loaded.
+    this.ensureRefData();
     this.editModel.set({
       packageId: order.packageId,
       selectedItems: [],
@@ -537,7 +463,6 @@ export class AdminOrdersComponent implements OnInit {
     this.editing.set(order);
     this.editLoadingDetails.set(true);
 
-    // Load the existing dish selection so checkboxes are pre-filled.
     this.orderService.getFullDetails(order.id).subscribe({
       next: (d) => {
         this.editModel.update((m) => ({
@@ -583,7 +508,6 @@ export class AdminOrdersComponent implements OnInit {
   }
 
   onPackageChange(newPkgId: string): void {
-    // Switching the package clears dish selections since limits may differ.
     this.editModel.update((m) => ({ ...m, packageId: newPkgId, selectedItems: [] }));
   }
 
@@ -632,7 +556,7 @@ export class AdminOrdersComponent implements OnInit {
 
     this.orderService.update(order.id, dto).subscribe({
       next: (updated) => {
-        this.orders.update((list) =>
+        this.customerOrders.update((list) =>
           list.map((o) => (o.id === updated.id ? { ...o, ...updated } : o)),
         );
         this.saving.set(false);
@@ -643,14 +567,6 @@ export class AdminOrdersComponent implements OnInit {
         this.toast.show(e.error?.message || 'עדכון ההזמנה נכשל', 'error');
         this.saving.set(false);
       },
-    });
-  }
-
-  deleteOrder(order: Order): void {
-    if (!confirm('האם אתה בטוח שברצונך למחוק את ההזמנה?')) return;
-    this.orderService.delete(order.id).subscribe(() => {
-      this.orders.update((list) => list.filter((o) => o.id !== order.id));
-      this.toast.show('ההזמנה נמחקה בהצלחה', 'success');
     });
   }
 }

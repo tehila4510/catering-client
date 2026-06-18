@@ -36,6 +36,14 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
             <span class="nav-icon">📋</span>
             ניהול הזמנות
           </a>
+          <a
+            routerLink="customers"
+            routerLinkActive="active"
+            class="nav-link"
+          >
+            <span class="nav-icon">👥</span>
+            רשימת לקוחות
+          </a>
         </nav>
       </aside>
       <main class="content-area">
