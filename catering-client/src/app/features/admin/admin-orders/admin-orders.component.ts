@@ -52,6 +52,24 @@ interface OrderEditModel {
           [ngModel]="customerTerm()"
           (ngModelChange)="customerTerm.set($event)"
         />
+        <div class="status-filter">
+          <label class="status-check">
+            <input
+              type="checkbox"
+              [ngModel]="showApproved()"
+              (ngModelChange)="showApproved.set($event)"
+            />
+            מאושר
+          </label>
+          <label class="status-check">
+            <input
+              type="checkbox"
+              [ngModel]="showPending()"
+              (ngModelChange)="showPending.set($event)"
+            />
+            ממתין
+          </label>
+        </div>
         <div class="date-filter">
           <label>מתאריך:</label>
           <input
@@ -357,6 +375,8 @@ export class AdminOrdersComponent implements OnInit {
   customerTerm = signal('');
   startDate = signal('');
   endDate = signal('');
+  showApproved = signal(true);
+  showPending = signal(true);
 
   private readonly emptyEdit: OrderEditModel = {
     packageId: '',
@@ -417,6 +437,8 @@ export class AdminOrdersComponent implements OnInit {
     const term = this.customerTerm().trim().toLowerCase();
     const start = this.startDate();
     const end = this.endDate();
+    const showApproved = this.showApproved();
+    const showPending = this.showPending();
 
     return this.orders().filter((o) => {
       const matchesCustomer =
@@ -428,7 +450,12 @@ export class AdminOrdersComponent implements OnInit {
       const matchesStart = !start || (eventDay && eventDay >= start);
       const matchesEnd = !end || (eventDay && eventDay <= end);
 
-      return matchesCustomer && matchesStart && matchesEnd;
+      const matchesApproval =
+        !showApproved && !showPending
+          ? false
+          : (showApproved && o.isApproved) || (showPending && !o.isApproved);
+
+      return matchesCustomer && matchesStart && matchesEnd && matchesApproval;
     });
   });
 
@@ -493,6 +520,8 @@ export class AdminOrdersComponent implements OnInit {
     this.customerTerm.set('');
     this.startDate.set('');
     this.endDate.set('');
+    this.showApproved.set(true);
+    this.showPending.set(true);
   }
 
   openEdit(order: Order): void {
