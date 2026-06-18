@@ -103,6 +103,13 @@ export const routes: Routes = [
             (m) => m.AdminOrdersComponent,
           ),
       },
+      {
+        path: 'customers',
+        loadComponent: () =>
+          import('./features/admin/admin-customers/admin-customers.component').then(
+            (m) => m.AdminCustomersComponent,
+          ),
+      },
     ],
   },
 

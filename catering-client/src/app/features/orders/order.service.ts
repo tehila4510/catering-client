@@ -78,6 +78,13 @@ export class OrderService {
       .pipe(map((res) => (res.data ?? []).map((o) => this.toModel(o))));
   }
 
+  // Admin: orders belonging to a specific customer.
+  getByCustomer(customerId: string): Observable<Order[]> {
+    return this.http
+      .get<ApiResponse<OrderApi[]>>(`${this.apiUrl}/customer/${customerId}`)
+      .pipe(map((res) => (res.data ?? []).map((o) => this.toModel(o))));
+  }
+
   // Admin: full populated details for a single order.
   getFullDetails(id: string): Observable<OrderFullDetails> {
     return this.http
