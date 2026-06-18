@@ -1,0 +1,52 @@
+<section class="reviews-page" dir="rtl">
+  <header class="page-head">
+    <h1>חוות דעת של לקוחות</h1>
+    <p class="subtitle">מה לקוחותינו מספרים על השירות והאוכל</p>
+  </header>
+
+  @if (loading()) {
+    <app-loader />
+  }
+
+  @if (!loading()) {
+    <div class="stats-bar">
+      <div class="avg-block">
+        <span class="avg-number gold-text">{{ stats().averageRating }}</span>
+        <app-star-rating [value]="roundedAverage()" [readonly]="true" />
+        <span class="count">{{ stats().count }} חוות דעת</span>
+      </div>
+
+      @if (isLoggedIn()) {
+        <a routerLink="/profile" class="btn-primary">כתיבת חוות דעת על הזמנה</a>
+      } @else {
+        <a routerLink="/login" class="btn-secondary">התחבר כדי לכתוב חוות דעת</a>
+      }
+    </div>
+
+    <p class="write-hint">
+      חוות דעת ניתן לכתוב רק על חבילה שהזמנת — דרך אזור ההזמנות שלך בפרופיל.
+    </p>
+
+    @if (showForm() && editing()) {
+      <div class="form-wrap">
+        <h2>עריכת חוות דעת</h2>
+        <app-review-form
+          [initialRating]="editing()?.rating ?? 0"
+          [initialComment]="editing()?.comment ?? ''"
+          [saving]="saving()"
+          [submitLabel]="'עדכון'"
+          (submitted)="submit($event)"
+          (cancelled)="closeForm()"
+        />
+      </div>
+    }
+
+    <app-review-list
+      [reviews]="reviews()"
+      [ownedIds]="ownedIds()"
+      [canManageAll]="isAdmin()"
+      (edit)="openEdit($event)"
+      (remove)="remove($event)"
+    />
+  }
+</section>

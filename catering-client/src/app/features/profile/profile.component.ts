@@ -13,11 +13,17 @@ import { User } from '../../core/models/user.model';
 import { Order, CustomerUpdateOrderDto, orderStatusLabel } from '../../core/models/order.model';
 import { Package } from '../../core/models/package.model';
 import { Dish } from '../../core/models/dish.model';
+import { Review } from '../../core/models/review.model';
 import { OrderService } from '../orders/order.service';
 import { PackageService } from '../packages/package.service';
 import { DishService } from '../dishes/dish.service';
+import { ReviewService } from '../reviews/review.service';
 import { environment } from '../../../environments/environment';
 import { CATEGORY_LABELS } from '../../core/constants/categories';
+import {
+  ReviewFormComponent,
+  ReviewFormValue,
+} from '../../shared/components/review-form/review-form.component';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -48,10 +54,17 @@ interface ProfileEditState {
   phone: string;
 }
 
+interface ReviewModalState {
+  orderId: string;
+  packageId: string;
+  packageName: string;
+  existing: Review | null;
+}
+
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, ReviewFormComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
 })
@@ -62,12 +75,17 @@ export class ProfileComponent implements OnInit {
   private orderService = inject(OrderService);
   private packageService = inject(PackageService);
   private dishService = inject(DishService);
+  private reviewService = inject(ReviewService);
   private toast = inject(ToastService);
   private destroyRef = inject(DestroyRef);
 
   user = signal<User | null>(null);
   orders = signal<Order[]>([]);
   ordersLoading = signal(true);
+
+  myReviews = signal<Review[]>([]);
+  reviewModal = signal<ReviewModalState | null>(null);
+  reviewSaving = signal(false);
 
   packages = signal<Package[]>([]);
   allDishes = signal<Dish[]>([]);
@@ -141,6 +159,72 @@ export class ProfileComponent implements OnInit {
       },
       error: () => this.ordersLoading.set(false),
     });
+
+    this.reviewService.getMyReviews().subscribe({
+      next: (reviews) => this.myReviews.set(reviews),
+    });
+  }
+
+  reviewForOrder(orderId: string): Review | null {
+    return this.myReviews().find((r) => r.orderId === orderId) ?? null;
+  }
+
+  openReview(order: Order): void {
+    this.reviewModal.set({
+      orderId: order.id,
+      packageId: order.packageId,
+      packageName: order.packageName,
+      existing: this.reviewForOrder(order.id),
+    });
+  }
+
+  closeReview(): void {
+    this.reviewModal.set(null);
+    this.reviewSaving.set(false);
+  }
+
+  submitReview(value: ReviewFormValue): void {
+    const state = this.reviewModal();
+    if (!state) return;
+
+    this.reviewSaving.set(true);
+
+    if (state.existing) {
+      this.reviewService.update(state.existing.id, value).subscribe({
+        next: (updated) => {
+          this.myReviews.update((list) =>
+            list.map((r) => (r.id === updated.id ? updated : r)),
+          );
+          this.reviewSaving.set(false);
+          this.closeReview();
+          this.toast.show('חוות הדעת עודכנה בהצלחה!', 'success');
+        },
+        error: (e: { error?: { message?: string } }) => {
+          this.reviewSaving.set(false);
+          this.toast.show(e.error?.message || 'עדכון נכשל, נסה שוב', 'error');
+        },
+      });
+    } else {
+      this.reviewService
+        .create({
+          orderId: state.orderId,
+          packageId: state.packageId || undefined,
+          rating: value.rating,
+          comment: value.comment,
+        })
+        .subscribe({
+          next: (created) => {
+            this.myReviews.update((list) => [created, ...list]);
+            this.reviewSaving.set(false);
+            this.closeReview();
+            this.toast.show('תודה! חוות הדעת נשלחה', 'success');
+          },
+          error: (e: { error?: { message?: string } }) => {
+            this.reviewSaving.set(false);
+            this.toast.show(e.error?.message || 'שליחה נכשלה, נסה שוב', 'error');
+          },
+        });
+    }
   }
 
   statusLabel(order: Order): string {

@@ -1,0 +1,78 @@
+@use '../../../../styles/variables' as *;
+
+.reviews-page {
+  min-height: 100vh;
+  background: $black;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.page-head {
+  text-align: center;
+
+  h1 {
+    font-family: $font-display;
+    font-size: 2.2rem;
+    color: $gold;
+    margin-bottom: 0.4rem;
+  }
+
+  .subtitle {
+    color: $white-dim;
+    font-size: 1.05rem;
+  }
+}
+
+.stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  background: $black-soft;
+  border: 1px solid rgba($gold, 0.2);
+  border-radius: $radius-md;
+  padding: 1.25rem 1.5rem;
+}
+
+.avg-block {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+
+  .avg-number {
+    font-size: 2.4rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .count {
+    color: $gray;
+    font-size: 0.9rem;
+  }
+}
+
+.write-hint {
+  color: $gray;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: -0.5rem;
+}
+
+.form-wrap {
+  background: $black-soft;
+  border: 1px solid rgba($gold, 0.25);
+  border-radius: $radius-md;
+  padding: 1.5rem;
+
+  h2 {
+    font-family: $font-display;
+    font-size: 1.3rem;
+    color: $gold;
+    margin-bottom: 1rem;
+  }
+}

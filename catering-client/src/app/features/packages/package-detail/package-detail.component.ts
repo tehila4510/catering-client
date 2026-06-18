@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, input, inject } from '@angular/core';
+import { Component, OnInit, computed, signal, input, inject } from '@angular/core';
 
 import { Router, RouterLink } from '@angular/router';
 
@@ -7,6 +7,10 @@ import { PackageService } from '../package.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { CATEGORY_LABELS } from '../../../core/constants/categories';
+import { Review, ReviewStats } from '../../../core/models/review.model';
+import { ReviewService } from '../../reviews/review.service';
+import { StarRatingComponent } from '../../../shared/components/star-rating/star-rating.component';
+import { ReviewListComponent } from '../../../shared/components/review-list/review-list.component';
 
 interface LimitRow {
   key: string;
@@ -17,7 +21,7 @@ interface LimitRow {
 @Component({
   selector: 'app-package-detail',
   standalone: true,
-  imports: [RouterLink, LoaderComponent],
+  imports: [RouterLink, LoaderComponent, StarRatingComponent, ReviewListComponent],
   template: `
     <section class="detail-page">
       @if (loading()) {
@@ -73,6 +77,25 @@ interface LimitRow {
             </div>
           }
         </div>
+
+        <section class="reviews-section">
+          <div class="reviews-head">
+            <h2>חוות דעת על החבילה</h2>
+            @if (reviewStats().count > 0) {
+              <div class="reviews-summary">
+                <span class="avg gold-text">{{ reviewStats().averageRating }}</span>
+                <app-star-rating [value]="roundedAverage()" [readonly]="true" />
+                <span class="count">({{ reviewStats().count }})</span>
+              </div>
+            }
+          </div>
+
+          @if (reviewsLoading()) {
+            <p class="reviews-loading">טוען חוות דעת...</p>
+          } @else {
+            <app-review-list [reviews]="reviews()" />
+          }
+        </section>
       }
     </section>
     `,
@@ -82,12 +105,21 @@ export class PackageDetailComponent implements OnInit {
   private packageService = inject(PackageService);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private reviewService = inject(ReviewService);
 
   readonly id = input<string>('');
 
   pkg = signal<Package | null>(null);
   loading = signal(true);
   showLoginPrompt = signal(false);
+
+  reviews = signal<Review[]>([]);
+  reviewStats = signal<ReviewStats>({ averageRating: 0, count: 0 });
+  reviewsLoading = signal(true);
+
+  readonly roundedAverage = computed(() =>
+    Math.round(this.reviewStats().averageRating),
+  );
 
   readonly fallbackImage =
     'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800';
@@ -115,6 +147,28 @@ export class PackageDetailComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
+    });
+
+    this.loadReviews();
+  }
+
+  private loadReviews(): void {
+    const packageId = this.id();
+    if (!packageId) {
+      this.reviewsLoading.set(false);
+      return;
+    }
+
+    this.reviewService.getAll(packageId).subscribe({
+      next: (reviews) => {
+        this.reviews.set(reviews);
+        this.reviewsLoading.set(false);
+      },
+      error: () => this.reviewsLoading.set(false),
+    });
+
+    this.reviewService.getStats(packageId).subscribe({
+      next: (stats) => this.reviewStats.set(stats),
     });
   }
 

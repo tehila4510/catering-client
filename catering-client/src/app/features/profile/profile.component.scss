@@ -282,7 +282,33 @@ $gray: #5c5c5c;
   }
 }
 
+.btn-review {
+  padding: 0.6rem 1.25rem;
+  background-color: rgba($gold, 0.12);
+  color: $gold;
+  border: 1px solid rgba($gold, 0.5);
+  border-radius: 8px;
+  font-family: 'Heebo', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    background-color: $gold;
+    color: $black;
+  }
+}
+
 // ─── Edit Order Modal ─────────────────────────────────────────────────────────
+
+.modal-subtitle {
+  display: block;
+  color: $white-dim;
+  font-size: 0.95rem;
+  font-weight: 400;
+  margin-top: 0.25rem;
+}
 
 .modal-overlay {
   position: fixed;

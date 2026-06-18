@@ -40,6 +40,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'reviews',
+    loadComponent: () =>
+      import('./features/reviews/review-page/review-page.component').then(
+        (m) => m.ReviewPageComponent,
+      ),
+  },
+  {
     path: 'login',
     loadComponent: () =>
       import('./features/auth/login/login.component').then(

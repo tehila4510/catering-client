@@ -95,6 +95,13 @@
                     aria-label="ביטול הזמנה"
                   >ביטול הזמנה</button>
                 }
+                <button
+                  class="btn-review"
+                  (click)="openReview(order)"
+                  aria-label="חוות דעת על ההזמנה"
+                >
+                  {{ reviewForOrder(order.id) ? '✎ עריכת חוות דעת' : '★ כתיבת חוות דעת' }}
+                </button>
               </div>
             </div>
           }
@@ -171,6 +178,40 @@
           <button type="button" class="btn-secondary" (click)="closeProfileEdit()">ביטול</button>
         </div>
       </form>
+    </div>
+  </div>
+}
+
+<!-- Review Modal -->
+@if (reviewModal(); as rev) {
+  <div
+    class="modal-overlay"
+    role="button"
+    tabindex="0"
+    (click)="closeReview()"
+    (keydown.escape)="closeReview()"
+  >
+    <div
+      class="modal-box"
+      role="presentation"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <h2 class="modal-title">
+        {{ rev.existing ? 'עריכת חוות דעת' : 'חוות דעת' }}
+        @if (rev.packageName) {
+          <span class="modal-subtitle">{{ rev.packageName }}</span>
+        }
+      </h2>
+
+      <app-review-form
+        [initialRating]="rev.existing?.rating ?? 0"
+        [initialComment]="rev.existing?.comment ?? ''"
+        [saving]="reviewSaving()"
+        [submitLabel]="rev.existing ? 'עדכון חוות דעת' : 'שליחת חוות דעת'"
+        (submitted)="submitReview($event)"
+        (cancelled)="closeReview()"
+      />
     </div>
   </div>
 }

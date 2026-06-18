@@ -119,3 +119,46 @@
   gap: 1rem;
   align-items: center;
 }
+
+.reviews-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-top: 1px solid rgba($gold, 0.15);
+  padding-top: 1.75rem;
+}
+
+.reviews-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+
+  h2 {
+    font-family: $font-display;
+    font-size: 1.4rem;
+    color: $gold;
+  }
+}
+
+.reviews-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .avg {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .count {
+    color: $gray;
+    font-size: 0.9rem;
+  }
+}
+
+.reviews-loading {
+  color: $gray;
+  padding: 1rem 0;
+}
