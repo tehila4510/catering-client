@@ -12,6 +12,11 @@
   align-items: flex-start;
   gap: 14px;
   padding-right: 12px;
+
+  // The wrapper spans a large fixed area (panel + fab) but is mostly empty.
+  // Never let the container itself swallow clicks meant for the page —
+  // only the interactive children below re-enable pointer events.
+  pointer-events: none;
 }
 
 // Floating launcher (circular icon button)
@@ -28,6 +33,9 @@
   cursor: pointer;
   box-shadow: 0 4px 20px rgba(201, 168, 76, 0.45);
   transition: transform 0.2s, box-shadow 0.2s;
+
+  // Re-enable clicks on the launcher (parent disables pointer events)
+  pointer-events: auto;
 
   &:hover {
     transform: translateY(-2px) scale(1.04);
