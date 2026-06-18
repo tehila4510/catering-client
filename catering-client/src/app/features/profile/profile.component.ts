@@ -42,6 +42,12 @@ interface OrderEditState {
   address: string;
 }
 
+interface ProfileEditState {
+  name: string;
+  email: string;
+  phone: string;
+}
+
 @Component({
   selector: 'app-profile',
   standalone: true,
@@ -66,6 +72,10 @@ export class ProfileComponent implements OnInit {
   packages = signal<Package[]>([]);
   allDishes = signal<Dish[]>([]);
   catalogLoading = signal(false);
+
+  profileEdit = signal<ProfileEditState | null>(null);
+  profileSaving = signal(false);
+  profileError = signal('');
 
   editState = signal<OrderEditState | null>(null);
   editSaving = signal(false);
@@ -341,6 +351,64 @@ export class ProfileComponent implements OnInit {
         this.editSaving.set(false);
       },
     });
+  }
+
+  openProfileEdit(): void {
+    const u = this.user();
+    if (!u) return;
+    this.profileError.set('');
+    this.profileEdit.set({
+      name: u.name ?? '',
+      email: u.email ?? '',
+      phone: u.phone ?? '',
+    });
+  }
+
+  closeProfileEdit(): void {
+    this.profileEdit.set(null);
+    this.profileError.set('');
+  }
+
+  updateProfileField(field: keyof ProfileEditState, value: string): void {
+    const state = this.profileEdit();
+    if (!state) return;
+    this.profileEdit.set({ ...state, [field]: value });
+  }
+
+  saveProfile(): void {
+    const state = this.profileEdit();
+    if (!state) return;
+
+    if (!state.name.trim() || !state.email.trim() || !state.phone.trim()) {
+      this.profileError.set('יש למלא את כל השדות');
+      return;
+    }
+
+    this.profileError.set('');
+    this.profileSaving.set(true);
+
+    const dto = {
+      name: state.name.trim(),
+      email: state.email.trim(),
+      phone: state.phone.trim(),
+    };
+
+    this.http
+      .put<ApiResponse<User>>(`${environment.apiUrl}/auth/profile`, dto)
+      .pipe(map((res) => res.data))
+      .subscribe({
+        next: (updated) => {
+          this.user.set(updated);
+          this.auth.loadProfile();
+          this.profileSaving.set(false);
+          this.closeProfileEdit();
+          this.toast.show('הפרטים האישיים עודכנו בהצלחה!', 'success');
+        },
+        error: (e: { error?: { message?: string } }) => {
+          this.profileError.set(e.error?.message || 'עדכון הפרטים נכשל, נסה שוב');
+          this.profileSaving.set(false);
+        },
+      });
   }
 
   logout(): void {

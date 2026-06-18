@@ -4,8 +4,16 @@
       <div class="profile-card">
         <h1 class="profile-title">הפרופיל שלי</h1>
         <div class="profile-field">
+          <span class="field-label">שם:</span>
+          <span class="field-value">{{ u.name }}</span>
+        </div>
+        <div class="profile-field">
           <span class="field-label">אימייל:</span>
           <span class="field-value">{{ u.email }}</span>
+        </div>
+        <div class="profile-field">
+          <span class="field-label">טלפון:</span>
+          <span class="field-value">{{ u.phone || '—' }}</span>
         </div>
         <div class="profile-field">
           <span class="field-label">תפקיד:</span>
@@ -21,9 +29,14 @@
             </span>
           </div>
         }
-        <button class="btn-logout" (click)="logout()" aria-label="התנתקות">
-          התנתקות
-        </button>
+        <div class="profile-card-actions">
+          <button class="btn-edit-profile" (click)="openProfileEdit()" aria-label="עריכת פרטים אישיים">
+            עריכת פרטים אישיים
+          </button>
+          <button class="btn-logout" (click)="logout()" aria-label="התנתקות">
+            התנתקות
+          </button>
+        </div>
       </div>
     } @else {
       <div class="loading-state" aria-live="polite">טוען פרופיל...</div>
@@ -90,6 +103,77 @@
     </div>
   </div>
 </div>
+
+<!-- Edit Personal Details Modal -->
+@if (profileEdit(); as p) {
+  <div
+    class="modal-overlay"
+    role="button"
+    tabindex="0"
+    (click)="closeProfileEdit()"
+    (keydown.escape)="closeProfileEdit()"
+  >
+    <div
+      class="modal-box"
+      role="presentation"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <h2 class="modal-title">עריכת פרטים אישיים</h2>
+
+      <form (ngSubmit)="saveProfile()" class="profile-edit-form">
+        <div class="form-group">
+          <label for="profile-name">שם מלא *</label>
+          <input
+            id="profile-name"
+            [ngModel]="p.name"
+            (ngModelChange)="updateProfileField('name', $event)"
+            name="profileName"
+            required
+            placeholder="השם המלא שלך"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="profile-email">אימייל *</label>
+          <input
+            id="profile-email"
+            type="email"
+            [ngModel]="p.email"
+            (ngModelChange)="updateProfileField('email', $event)"
+            name="profileEmail"
+            required
+            placeholder="name@example.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="profile-phone">טלפון *</label>
+          <input
+            id="profile-phone"
+            type="tel"
+            [ngModel]="p.phone"
+            (ngModelChange)="updateProfileField('phone', $event)"
+            name="profilePhone"
+            required
+            placeholder="050-1234567"
+          />
+        </div>
+
+        @if (profileError()) {
+          <p class="error-msg">{{ profileError() }}</p>
+        }
+
+        <div class="step-actions">
+          <button type="submit" class="btn-primary" [disabled]="profileSaving()">
+            {{ profileSaving() ? 'שומר...' : 'שמור שינויים' }}
+          </button>
+          <button type="button" class="btn-secondary" (click)="closeProfileEdit()">ביטול</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
 
 <!-- Edit Order Modal -->
 @if (editState(); as state) {
