@@ -7,6 +7,7 @@ import {
   Order,
   OrderFullDetails,
   UpdateOrderDto,
+  isOrderApproved,
   orderStatusLabel,
 } from '../../../core/models/order.model';
 import { Package } from '../../../core/models/package.model';
@@ -31,7 +32,6 @@ interface OrderEditModel {
   numberOfGuests: number;
   eventDate: string;
   address: string;
-  isApproved: boolean;
 }
 
 @Component({
@@ -107,8 +107,8 @@ interface OrderEditModel {
                 <span class="customer">{{ order.userName || 'לקוח' }}</span>
                 <span
                   class="status-badge"
-                  [class.approved]="order.isApproved"
-                  [class.pending]="!order.isApproved"
+                  [class.approved]="isOrderApproved(order)"
+                  [class.pending]="!isOrderApproved(order)"
                 >{{ statusLabel(order) }}</span>
               </div>
               <div class="order-body">
@@ -121,7 +121,12 @@ interface OrderEditModel {
               </div>
               <div class="order-actions">
                 <button class="btn-details" (click)="openDetails(order)">פרטים מלאים</button>
-                @if (!order.isApproved) {
+                @if (!isOrderApproved(order)) {
+                  <button
+                    class="btn-confirm-payment"
+                    [disabled]="confirmingId() === order.id"
+                    (click)="confirmPayment(order)"
+                  >{{ confirmingId() === order.id ? 'מאשר...' : 'אשר תשלום (מזומן/העברה)' }}</button>
                   <button class="btn-edit" (click)="openEdit(order)">עדכון</button>
                   <button class="btn-delete" (click)="deleteOrder(order)">מחיקה</button>
                 }
@@ -251,16 +256,6 @@ interface OrderEditModel {
                   <span class="gold-text">₪{{ estimatedTotal() }}</span>
                 </p>
 
-                <label class="checkbox-row">
-                  <input
-                    type="checkbox"
-                    name="approve"
-                    [ngModel]="editModel().isApproved"
-                    (ngModelChange)="patchEdit({ isApproved: $event })"
-                  />
-                  <span>אשר את ההזמנה</span>
-                </label>
-
                 <div class="form-actions">
                   <button
                     type="submit"
@@ -314,9 +309,9 @@ interface OrderEditModel {
                   <span class="lbl">סטטוס:</span>
                   <span
                     class="status-badge"
-                    [class.approved]="d.isApproved"
-                    [class.pending]="!d.isApproved"
-                  >{{ statusLabelFor(d.isApproved) }}</span>
+                    [class.approved]="isOrderApproved(d)"
+                    [class.pending]="!isOrderApproved(d)"
+                  >{{ statusLabel(d) }}</span>
                 </div>
               </section>
 
@@ -339,7 +334,7 @@ interface OrderEditModel {
               </section>
 
               <div class="form-actions">
-                @if (!d.isApproved) {
+                @if (!isOrderApproved(d)) {
                   <button type="button" class="btn-primary" (click)="openEditFromDetails()">עדכון סטטוס</button>
                 }
                 <button type="button" class="btn-secondary" (click)="closeDetails()">סגירה</button>
@@ -357,6 +352,8 @@ export class AdminOrdersComponent implements OnInit {
   private packageService = inject(PackageService);
   private dishService = inject(DishService);
   private toast = inject(ToastService);
+
+  readonly isOrderApproved = isOrderApproved;
 
   orders = signal<Order[]>([]);
   packages = signal<Package[]>([]);
@@ -377,6 +374,7 @@ export class AdminOrdersComponent implements OnInit {
   endDate = signal('');
   showApproved = signal(true);
   showPending = signal(true);
+  confirmingId = signal<string | null>(null);
 
   private readonly emptyEdit: OrderEditModel = {
     packageId: '',
@@ -384,7 +382,6 @@ export class AdminOrdersComponent implements OnInit {
     numberOfGuests: 1,
     eventDate: '',
     address: '',
-    isApproved: false,
   };
 
   // Signal so computed() tracks changes reactively.
@@ -450,10 +447,11 @@ export class AdminOrdersComponent implements OnInit {
       const matchesStart = !start || (eventDay && eventDay >= start);
       const matchesEnd = !end || (eventDay && eventDay <= end);
 
+      const approved = isOrderApproved(o);
       const matchesApproval =
         !showApproved && !showPending
           ? false
-          : (showApproved && o.isApproved) || (showPending && !o.isApproved);
+          : (showApproved && approved) || (showPending && !approved);
 
       return matchesCustomer && matchesStart && matchesEnd && matchesApproval;
     });
@@ -475,12 +473,8 @@ export class AdminOrdersComponent implements OnInit {
     });
   }
 
-  statusLabel(order: Order): string {
+  statusLabel(order: Pick<Order, 'paymentStatus'>): string {
     return orderStatusLabel(order);
-  }
-
-  statusLabelFor(isApproved: boolean): string {
-    return orderStatusLabel({ isApproved });
   }
 
   openDetails(order: Order): void {
@@ -532,7 +526,6 @@ export class AdminOrdersComponent implements OnInit {
       numberOfGuests: order.numberOfGuests,
       eventDate: order.eventDate ? order.eventDate.substring(0, 10) : '',
       address: order.address,
-      isApproved: order.isApproved,
     });
     this.editing.set(order);
     this.editLoadingDetails.set(true);
@@ -627,7 +620,6 @@ export class AdminOrdersComponent implements OnInit {
       numberOfGuests: Number(m.numberOfGuests),
       eventDate: m.eventDate,
       address: m.address,
-      isApproved: m.isApproved,
     };
 
     this.orderService.update(order.id, dto).subscribe({
@@ -642,6 +634,26 @@ export class AdminOrdersComponent implements OnInit {
       error: (e: { error?: { message?: string } }) => {
         this.toast.show(e.error?.message || 'עדכון ההזמנה נכשל', 'error');
         this.saving.set(false);
+      },
+    });
+  }
+
+  confirmPayment(order: Order): void {
+    if (this.confirmingId()) return;
+    if (!confirm('לאשר שהתשלום עבור ההזמנה התקבל (מזומן/העברה)?')) return;
+
+    this.confirmingId.set(order.id);
+    this.orderService.confirmPayment(order.id).subscribe({
+      next: (updated) => {
+        this.orders.update((list) =>
+          list.map((o) => (o.id === updated.id ? { ...o, ...updated } : o)),
+        );
+        this.confirmingId.set(null);
+        this.toast.show('התשלום אושר וההזמנה עודכנה בהצלחה', 'success');
+      },
+      error: (e: { error?: { message?: string } }) => {
+        this.toast.show(e.error?.message || 'אישור התשלום נכשל', 'error');
+        this.confirmingId.set(null);
       },
     });
   }

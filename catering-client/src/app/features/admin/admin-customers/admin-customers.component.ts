@@ -9,7 +9,7 @@ import { PackageService } from '../../packages/package.service';
 import { DishService } from '../../dishes/dish.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { CATEGORY_LABELS } from '../../../core/constants/categories';
-import { Order, UpdateOrderDto, orderStatusLabel } from '../../../core/models/order.model';
+import { Order, UpdateOrderDto, isOrderApproved, orderStatusLabel } from '../../../core/models/order.model';
 import { Package } from '../../../core/models/package.model';
 import { Dish } from '../../../core/models/dish.model';
 
@@ -26,7 +26,6 @@ interface OrderEditModel {
   numberOfGuests: number;
   eventDate: string;
   address: string;
-  isApproved: boolean;
 }
 
 @Component({
@@ -143,8 +142,8 @@ interface OrderEditModel {
                       <span class="pkg">{{ order.packageName || 'חבילה' }}</span>
                       <span
                         class="status-badge"
-                        [class.approved]="order.isApproved"
-                        [class.pending]="!order.isApproved"
+                        [class.approved]="isOrderApproved(order)"
+                        [class.pending]="!isOrderApproved(order)"
                       >{{ statusLabel(order) }}</span>
                     </div>
                     <div class="row"><span class="lbl">מס' אורחים:</span><span>{{ order.numberOfGuests }}</span></div>
@@ -152,13 +151,13 @@ interface OrderEditModel {
                     <div class="row"><span class="lbl">כתובת:</span><span>{{ order.address }}</span></div>
                     <div class="row"><span class="lbl">מחיר כולל:</span><span>₪{{ order.totalPrice }}</span></div>
 
-                    @if (!order.isApproved) {
+                    @if (!isOrderApproved(order)) {
                       <div class="order-item-actions">
                         <button
                           class="btn-approve"
                           [disabled]="approvingId() === order.id"
-                          (click)="approveOrder(order)"
-                        >{{ approvingId() === order.id ? 'מאשר...' : 'אשר הזמנה' }}</button>
+                          (click)="confirmPayment(order)"
+                        >{{ approvingId() === order.id ? 'מאשר...' : 'אשר תשלום (מזומן/העברה)' }}</button>
                         <button class="btn-edit" (click)="openEdit(order)">עריכה</button>
                       </div>
                     }
@@ -290,16 +289,6 @@ interface OrderEditModel {
                   <span class="gold-text">₪{{ estimatedTotal() }}</span>
                 </p>
 
-                <label class="checkbox-row">
-                  <input
-                    type="checkbox"
-                    name="approve"
-                    [ngModel]="editModel().isApproved"
-                    (ngModelChange)="patchEdit({ isApproved: $event })"
-                  />
-                  <span>אשר את ההזמנה</span>
-                </label>
-
                 <div class="form-actions">
                   <button
                     type="submit"
@@ -326,6 +315,8 @@ export class AdminCustomersComponent implements OnInit {
   private dishService = inject(DishService);
   private toast = inject(ToastService);
 
+  readonly isOrderApproved = isOrderApproved;
+
   customers = signal<Customer[]>([]);
   loading = signal(true);
   searchTerm = signal('');
@@ -351,7 +342,6 @@ export class AdminCustomersComponent implements OnInit {
     numberOfGuests: 1,
     eventDate: '',
     address: '',
-    isApproved: false,
   };
 
   editModel = signal<OrderEditModel>({ ...this.emptyEdit });
@@ -422,22 +412,25 @@ export class AdminCustomersComponent implements OnInit {
     this.customerOrders.set([]);
   }
 
-  statusLabel(order: Order): string {
+  statusLabel(order: Pick<Order, 'paymentStatus'>): string {
     return orderStatusLabel(order);
   }
 
-  approveOrder(order: Order): void {
+  confirmPayment(order: Order): void {
+    if (this.approvingId()) return;
+    if (!confirm('לאשר שהתשלום עבור ההזמנה התקבל (מזומן/העברה)?')) return;
+
     this.approvingId.set(order.id);
-    this.orderService.update(order.id, { isApproved: true }).subscribe({
+    this.orderService.confirmPayment(order.id).subscribe({
       next: (updated) => {
         this.customerOrders.update((list) =>
           list.map((o) => (o.id === updated.id ? { ...o, ...updated } : o)),
         );
         this.approvingId.set(null);
-        this.toast.show('ההזמנה אושרה בהצלחה', 'success');
+        this.toast.show('התשלום אושר וההזמנה עודכנה בהצלחה', 'success');
       },
       error: (e: { error?: { message?: string } }) => {
-        this.toast.show(e.error?.message || 'אישור ההזמנה נכשל', 'error');
+        this.toast.show(e.error?.message || 'אישור התשלום נכשל', 'error');
         this.approvingId.set(null);
       },
     });
@@ -458,7 +451,6 @@ export class AdminCustomersComponent implements OnInit {
       numberOfGuests: order.numberOfGuests,
       eventDate: order.eventDate ? order.eventDate.substring(0, 10) : '',
       address: order.address,
-      isApproved: order.isApproved,
     });
     this.editing.set(order);
     this.editLoadingDetails.set(true);
@@ -551,7 +543,6 @@ export class AdminCustomersComponent implements OnInit {
       numberOfGuests: Number(m.numberOfGuests),
       eventDate: m.eventDate,
       address: m.address,
-      isApproved: m.isApproved,
     };
 
     this.orderService.update(order.id, dto).subscribe({

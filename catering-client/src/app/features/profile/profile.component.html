@@ -57,8 +57,8 @@
                 <span class="order-package">{{ order.packageName || 'חבילה' }}</span>
                 <span
                   class="status-badge"
-                  [class.approved]="order.isApproved"
-                  [class.pending]="!order.isApproved"
+                  [class.approved]="isOrderApproved(order)"
+                  [class.pending]="!isOrderApproved(order)"
                 >{{ statusLabel(order) }}</span>
               </div>
               <div class="order-body">

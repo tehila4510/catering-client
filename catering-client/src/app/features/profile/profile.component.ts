@@ -10,7 +10,7 @@ import { forkJoin } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { User } from '../../core/models/user.model';
-import { Order, CustomerUpdateOrderDto, orderStatusLabel } from '../../core/models/order.model';
+import { Order, CustomerUpdateOrderDto, isOrderApproved, orderStatusLabel } from '../../core/models/order.model';
 import { Package } from '../../core/models/package.model';
 import { Dish } from '../../core/models/dish.model';
 import { Review } from '../../core/models/review.model';
@@ -78,6 +78,8 @@ export class ProfileComponent implements OnInit {
   private reviewService = inject(ReviewService);
   private toast = inject(ToastService);
   private destroyRef = inject(DestroyRef);
+
+  readonly isOrderApproved = isOrderApproved;
 
   user = signal<User | null>(null);
   orders = signal<Order[]>([]);
@@ -232,7 +234,7 @@ export class ProfileComponent implements OnInit {
   }
 
   canCancel(order: Order): boolean {
-    if (order.isApproved) return false;
+    if (isOrderApproved(order)) return false;
     if (!order.eventDate) return false;
 
     const event = new Date(order.eventDate);
@@ -247,7 +249,7 @@ export class ProfileComponent implements OnInit {
   }
 
   canEdit(order: Order): boolean {
-    return !order.isApproved;
+    return !isOrderApproved(order);
   }
 
   cancelOrder(order: Order): void {

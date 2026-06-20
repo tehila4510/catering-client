@@ -10,6 +10,11 @@ import { FormsModule } from '@angular/forms';
 
 import { Dish } from '../../core/models/dish.model';
 import { Package } from '../../core/models/package.model';
+import {
+  isOrderApproved,
+  ORDER_STATUS_APPROVED,
+  ORDER_STATUS_PENDING,
+} from '../../core/models/order.model';
 import { DishCardComponent } from '../components/dish-card/dish-card.component';
 import { PackageCardComponent } from '../components/package-card/package-card.component';
 import { AgentChatService, ChatTurn, ToolResult } from './agent-chat.service';
@@ -25,7 +30,7 @@ export interface OrderCard {
   eventDate: string;
   address: string;
   totalPrice: number;
-  isApproved: boolean;
+  paymentStatus: string;
 }
 
 export interface ChatMessage {
@@ -48,6 +53,8 @@ export interface ChatMessage {
 })
 export class AgentChatWidgetComponent {
   chatService = inject(AgentChatService);
+
+  readonly isOrderApproved = isOrderApproved;
 
   @ViewChild('messagesEnd') messagesEnd!: ElementRef;
 
@@ -193,7 +200,7 @@ export class AgentChatWidgetComponent {
       eventDate: o.eventDate ?? '',
       address: o.address ?? '',
       totalPrice: o.totalPrice ?? 0,
-      isApproved: !!o.isApproved,
+      paymentStatus: o.paymentStatus ?? ORDER_STATUS_PENDING,
     };
   }
 
@@ -204,7 +211,7 @@ export class AgentChatWidgetComponent {
   }
 
   orderStatus(order: OrderCard): string {
-    return order.isApproved ? 'מאושרת' : 'ממתינה לאישור';
+    return isOrderApproved(order) ? ORDER_STATUS_APPROVED : ORDER_STATUS_PENDING;
   }
 
   /**

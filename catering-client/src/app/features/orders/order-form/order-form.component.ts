@@ -394,7 +394,7 @@ export class OrderFormComponent implements OnInit {
     this.error.set('');
     this.saving.set(true);
 
-    // Create our internal order first. It stays "ממתין לאישור" (pending) until a
+    // Create our internal order first. It stays "ממתין לתשלום" (pending) until a
     // PayPal capture is confirmed server-side — we never mark it paid from here.
     this.orderService
       .create({

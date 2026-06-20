@@ -13,10 +13,9 @@ export interface UpdateOrderDto {
   eventDate?: string;
   address?: string;
   numberOfGuests?: number;
-  isApproved?: boolean;
 }
 
-/** DTO for customer self-edit — isApproved is intentionally omitted. */
+/** DTO for customer self-edit — paymentStatus cannot be changed via this endpoint. */
 export interface CustomerUpdateOrderDto {
   packageId?: string;
   selectedItems?: string[];
@@ -36,7 +35,7 @@ export interface Order {
   eventDate: string;
   address: string;
   totalPrice: number;
-  isApproved: boolean;
+  paymentStatus: string;
 }
 
 export interface OrderDishItem {
@@ -54,13 +53,18 @@ export interface OrderFullDetails {
   eventDate: string;
   address: string;
   totalPrice: number;
-  isApproved: boolean;
+  paymentStatus: string;
   dishes: OrderDishItem[];
 }
 
-export const ORDER_STATUS_PENDING = 'ממתין לאישור';
+export const ORDER_STATUS_PENDING = 'ממתין לתשלום';
 export const ORDER_STATUS_APPROVED = 'מאושר';
 
-export function orderStatusLabel(order: Pick<Order, 'isApproved'>): string {
-  return order.isApproved ? ORDER_STATUS_APPROVED : ORDER_STATUS_PENDING;
+/** True once payment has been confirmed (PayPal capture or admin manual confirm). */
+export function isOrderApproved(order: Pick<Order, 'paymentStatus'>): boolean {
+  return order.paymentStatus === ORDER_STATUS_APPROVED;
+}
+
+export function orderStatusLabel(order: Pick<Order, 'paymentStatus'>): string {
+  return isOrderApproved(order) ? ORDER_STATUS_APPROVED : ORDER_STATUS_PENDING;
 }

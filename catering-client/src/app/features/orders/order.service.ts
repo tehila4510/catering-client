@@ -8,6 +8,7 @@ import {
   CreateOrderDto,
   CustomerUpdateOrderDto,
   Order,
+  ORDER_STATUS_PENDING,
   OrderFullDetails,
   UpdateOrderDto,
 } from '../../core/models/order.model';
@@ -38,7 +39,7 @@ interface OrderApi {
   eventDate?: string;
   address?: string;
   totalPrice?: number;
-  isApproved?: boolean;
+  paymentStatus?: string;
 }
 
 interface PopulatedDish {
@@ -98,10 +99,17 @@ export class OrderService {
       .pipe(map((res) => this.toModel(res.data)));
   }
 
-  /** Customer self-edit: PUT /orders/:id/edit — cannot change isApproved. */
+  /** Customer self-edit: PUT /orders/:id/edit — cannot change paymentStatus. */
   customerUpdate(id: string, data: CustomerUpdateOrderDto): Observable<Order> {
     return this.http
       .put<ApiResponse<OrderApi>>(`${this.apiUrl}/${id}/edit`, data)
+      .pipe(map((res) => this.toModel(res.data)));
+  }
+
+  /** Admin: manually confirm payment (cash / bank transfer) — flips status to "מאושר". */
+  confirmPayment(id: string): Observable<Order> {
+    return this.http
+      .patch<ApiResponse<OrderApi>>(`${this.apiUrl}/${id}/confirm-payment`, {})
       .pipe(map((res) => this.toModel(res.data)));
   }
 
@@ -153,7 +161,7 @@ export class OrderService {
       eventDate: base.eventDate,
       address: base.address,
       totalPrice: base.totalPrice,
-      isApproved: base.isApproved,
+      paymentStatus: base.paymentStatus,
       dishes,
     };
   }
@@ -179,7 +187,7 @@ export class OrderService {
       eventDate: o.eventDate ?? '',
       address: o.address ?? '',
       totalPrice: o.totalPrice ?? 0,
-      isApproved: o.isApproved ?? false,
+      paymentStatus: o.paymentStatus ?? ORDER_STATUS_PENDING,
     };
   }
 }
