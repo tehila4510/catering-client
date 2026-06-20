@@ -62,7 +62,7 @@ interface CategoryGroup {
                     <h2>{{ cat.label }}</h2>
                     <span
                       class="counter label-caps"
-                      [class.complete]="countFor(cat.key) === cat.limit"
+                      [class.complete]="countFor(cat.key) >= 1"
                     >
                       נבחרו {{ countFor(cat.key) }}/{{ cat.limit }}
                     </span>
@@ -285,7 +285,7 @@ export class OrderFormComponent implements OnInit {
   selectionComplete(): boolean {
     const cats = this.categories();
     if (!cats.length) return false;
-    return cats.every((c) => this.countFor(c.key) === c.limit);
+    return cats.every((c) => this.countFor(c.key) >= 1);
   }
 
   selectedItems(): string[] {

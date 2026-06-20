@@ -179,6 +179,7 @@ export class AgentChatWidgetComponent {
       name: p.name ?? '',
       description: p.description ?? '',
       pricePerPerson: p.pricePerPerson ?? 0,
+      minGuests: p.minGuests ?? 0,
       limits: p.limits ?? {
         starters: 0,
         mainCourses: 0,

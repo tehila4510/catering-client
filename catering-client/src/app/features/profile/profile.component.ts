@@ -148,7 +148,7 @@ export class ProfileComponent implements OnInit {
   editSelectionComplete = computed<boolean>(() => {
     const cats = this.editCategories();
     if (!cats.length) return true;
-    return cats.every((c) => this.editCountFor(c.key) === c.limit);
+    return cats.every((c) => this.editCountFor(c.key) >= 1);
   });
 
   ngOnInit(): void {

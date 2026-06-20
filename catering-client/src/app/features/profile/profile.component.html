@@ -306,7 +306,7 @@
                     <span class="cat-name">{{ cat.label }}</span>
                     <span
                       class="cat-count"
-                      [class.complete]="editCountFor(cat.key) === cat.limit"
+                      [class.complete]="editCountFor(cat.key) >= 1"
                     >{{ editCountFor(cat.key) }}/{{ cat.limit }}</span>
                   </div>
                   <div class="dish-checks">
