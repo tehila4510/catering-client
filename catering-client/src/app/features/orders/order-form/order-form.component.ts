@@ -1,4 +1,4 @@
-import { Component, OnInit, input, signal, computed, inject, NgZone } from '@angular/core';
+import { Component, OnInit, input, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -8,9 +8,9 @@ import { Dish } from '../../../core/models/dish.model';
 import { PackageService } from '../../packages/package.service';
 import { DishService } from '../../dishes/dish.service';
 import { OrderService } from '../order.service';
-import { PaymentService } from '../payment.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
+import { PaypalPaymentComponent } from '../../../shared/components/paypal-payment/paypal-payment.component';
 import { CATEGORY_LABELS } from '../../../core/constants/categories';
 
 interface CategoryGroup {
@@ -23,7 +23,7 @@ interface CategoryGroup {
 @Component({
   selector: 'app-order-form',
   standalone: true,
-  imports: [FormsModule, LoaderComponent],
+  imports: [FormsModule, LoaderComponent, PaypalPaymentComponent],
   template: `
     <section class="order-page">
       @if (loading()) {
@@ -191,33 +191,17 @@ interface CategoryGroup {
           }
 
           <!-- Step 3: payment -->
-          @if (step() === 3) {
+          @if (step() === 3 && createdOrderId(); as orderId) {
             <div class="payment-step">
               <p class="total-line">
                 <span class="label-caps">סה״כ לתשלום</span>
                 <span class="gold-text">₪{{ estimatedTotal() }}</span>
               </p>
 
-              @if (paymentSuccess()) {
-                <p class="success-msg">התשלום בוצע בהצלחה! ההזמנה אושרה</p>
-              } @else {
-                <p class="pay-hint">לתשלום ולאישור ההזמנה, השלם את התשלום באמצעות PayPal:</p>
-
-                @if (paypalLoading()) {
-                  <app-loader />
-                }
-
-                @if (paymentError()) {
-                  <p class="error-msg">{{ paymentError() }}</p>
-                }
-
-                <!-- PayPal Buttons are rendered into this container by the SDK. -->
-                <div id="paypal-button-container"></div>
-
-                @if (capturing()) {
-                  <p class="pay-hint">מאמת את התשלום...</p>
-                }
-              }
+              <app-paypal-payment
+                [orderId]="orderId"
+                (paymentSuccess)="onPaymentSuccess()"
+              />
             </div>
           }
         </div>
@@ -230,10 +214,8 @@ export class OrderFormComponent implements OnInit {
   private packageService = inject(PackageService);
   private dishService = inject(DishService);
   private orderService = inject(OrderService);
-  private paymentService = inject(PaymentService);
   private toast = inject(ToastService);
   private router = inject(Router);
-  private zone = inject(NgZone);
 
   readonly packageId = input<string>('');
 
@@ -261,13 +243,7 @@ export class OrderFormComponent implements OnInit {
   // Today's date as a local YYYY-MM-DD string, used to block past dates in the picker.
   readonly todayDateString = this.getTodayDateString();
 
-  // Payment state (step 3).
   createdOrderId = signal('');
-  paypalLoading = signal(false);
-  capturing = signal(false);
-  paymentError = signal('');
-  paymentSuccess = signal(false);
-  private paypalRendered = false;
 
   minGuests = computed(() => this.pkg()?.minGuests ?? 1);
 
@@ -410,7 +386,7 @@ export class OrderFormComponent implements OnInit {
     this.error.set('');
     this.saving.set(true);
 
-    // Create our internal order first. It stays "ממתין לאישור" (pending) until a
+    // Create our internal order first. It stays "ממתין לתשלום" (pending) until a
     // PayPal capture is confirmed server-side — we never mark it paid from here.
     this.orderService
       .create({
@@ -426,7 +402,6 @@ export class OrderFormComponent implements OnInit {
           this.saving.set(false);
           this.createdOrderId.set(order.id);
           this.step.set(3);
-          this.startPayment(order.id);
         },
         error: (e: { error?: { message?: string } }) => {
           this.error.set(e.error?.message || 'שליחת ההזמנה נכשלה, נסה שוב');
@@ -435,96 +410,9 @@ export class OrderFormComponent implements OnInit {
       });
   }
 
-  // Creates the PayPal order on our backend, loads the SDK and renders the buttons.
-  private startPayment(orderId: string): void {
-    this.paymentError.set('');
-    this.paypalLoading.set(true);
-
-    this.paymentService.createPaypalOrder(orderId).subscribe({
-      next: (paypalOrderId) => {
-        this.renderPaypalButtons(paypalOrderId, orderId);
-      },
-      error: (e: { error?: { message?: string } }) => {
-        this.paypalLoading.set(false);
-        this.paymentError.set(
-          e.error?.message || 'אירעה שגיאה בהפעלת התשלום, נסה שוב',
-        );
-      },
-    });
-  }
-
-  private async renderPaypalButtons(paypalOrderId: string, orderId: string): Promise<void> {
-    try {
-      const paypal = await this.paymentService.loadPaypalSdk();
-      this.paypalLoading.set(false);
-
-      if (!paypal?.Buttons) {
-        this.paymentError.set('טעינת PayPal נכשלה, נסה שוב');
-        return;
-      }
-
-      // Wait for the @if(step()===3) container to exist in the DOM.
-      const container = await this.waitForContainer('#paypal-button-container');
-      if (!container || this.paypalRendered) return;
-      this.paypalRendered = true;
-
-      paypal
-        .Buttons({
-          // The PayPal order was already created server-side; just hand back its id.
-          createOrder: () => Promise.resolve(paypalOrderId),
-          onApprove: () => this.onPaypalApprove(paypalOrderId, orderId),
-          onError: () =>
-            this.zone.run(() => this.paymentError.set('התשלום נכשל, נסה שוב')),
-        })
-        .render('#paypal-button-container');
-    } catch {
-      this.paypalLoading.set(false);
-      this.paymentError.set('טעינת PayPal נכשלה, נסה שוב');
-    }
-  }
-
-  // PayPal SDK callbacks run outside Angular's zone, so re-enter it for capture.
-  private onPaypalApprove(paypalOrderId: string, orderId: string): Promise<void> {
-    return new Promise<void>((resolve) => {
-      this.zone.run(() => {
-        this.capturing.set(true);
-        this.paymentError.set('');
-
-        this.paymentService.capturePaypalOrder(paypalOrderId, orderId).subscribe({
-          next: (success) => {
-            this.capturing.set(false);
-            if (success) {
-              this.paymentSuccess.set(true);
-              this.toast.show('התשלום בוצע בהצלחה! ההזמנה אושרה', 'success');
-              this.router.navigate(['/profile']);
-            } else {
-              this.paymentError.set('התשלום נכשל, נסה שוב');
-            }
-            resolve();
-          },
-          error: () => {
-            this.capturing.set(false);
-            this.paymentError.set('התשלום נכשל, נסה שוב');
-            resolve();
-          },
-        });
-      });
-    });
-  }
-
-  // Polls briefly for the buttons container to appear after the step switch.
-  private waitForContainer(selector: string, attempts = 20): Promise<Element | null> {
-    return new Promise((resolve) => {
-      const tick = (left: number) => {
-        const el = document.querySelector(selector);
-        if (el || left <= 0) {
-          resolve(el);
-          return;
-        }
-        setTimeout(() => tick(left - 1), 50);
-      };
-      tick(attempts);
-    });
+  onPaymentSuccess(): void {
+    this.toast.show('התשלום בוצע בהצלחה! ההזמנה אושרה', 'success');
+    this.router.navigate(['/profile']);
   }
 
   goToPackages(): void {

@@ -58,7 +58,7 @@
                       <span class="order-pkg">{{ order.packageName || 'הזמנה' }}</span>
                       <span
                         class="order-status"
-                        [class.approved]="order.isApproved"
+                        [class.approved]="isOrderApproved(order)"
                       >{{ orderStatus(order) }}</span>
                     </div>
                     <div class="order-row"><span>📅 תאריך:</span><span>{{ formatOrderDate(order.eventDate) }}</span></div>

@@ -1,0 +1,39 @@
+$gold: #c9a84c;
+$white-dim: #e0e0e0;
+$radius-sm: 6px;
+
+.paypal-payment {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pay-hint {
+  color: $white-dim;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.success-msg {
+  color: $gold;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 1rem;
+  border: 1px solid rgba($gold, 0.4);
+  border-radius: $radius-sm;
+  margin: 0;
+}
+
+.error-msg {
+  color: #ff6b6b;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.paypal-button-container {
+  background: #fff;
+  border-radius: $radius-sm;
+  padding: 0.75rem;
+  min-height: 50px;
+}

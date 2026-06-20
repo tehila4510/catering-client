@@ -175,10 +175,26 @@
 
 .order-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 1rem;
   padding-top: 0.9rem;
   border-top: 1px solid rgba($gold, 0.12);
+}
+
+.btn-confirm-payment {
+  padding: 0.45rem 1rem;
+  border-radius: $radius-sm;
+  font-family: $font-body;
+  font-size: 0.85rem;
+  cursor: pointer;
+  background: rgba(76, 175, 80, 0.15);
+  color: #7cc47f;
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover:not(:disabled) { background: #4caf50; color: $white; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
 .btn-edit,

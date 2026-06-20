@@ -10,6 +10,11 @@ import { FormsModule } from '@angular/forms';
 
 import { Dish } from '../../core/models/dish.model';
 import { Package } from '../../core/models/package.model';
+import {
+  isOrderApproved,
+  ORDER_STATUS_APPROVED,
+  ORDER_STATUS_PENDING,
+} from '../../core/models/order.model';
 import { DishCardComponent } from '../components/dish-card/dish-card.component';
 import { PackageCardComponent } from '../components/package-card/package-card.component';
 import { AgentChatService, ChatTurn, ToolResult } from './agent-chat.service';
@@ -25,7 +30,7 @@ export interface OrderCard {
   eventDate: string;
   address: string;
   totalPrice: number;
-  isApproved: boolean;
+  paymentStatus: string;
 }
 
 export interface ChatMessage {
@@ -49,6 +54,8 @@ export interface ChatMessage {
 export class AgentChatWidgetComponent {
   chatService = inject(AgentChatService);
 
+  readonly isOrderApproved = isOrderApproved;
+
   @ViewChild('messagesEnd') messagesEnd!: ElementRef;
 
   messages = signal<ChatMessage[]>([
@@ -60,6 +67,9 @@ export class AgentChatWidgetComponent {
     },
   ]);
 
+  /** Full conversation history for the API (includes tool-call turns, not just visible text). */
+  private conversationHistory = signal<ChatTurn[]>([]);
+
   inputText = '';
   isLoading = signal(false);
 
@@ -67,9 +77,8 @@ export class AgentChatWidgetComponent {
     const text = this.inputText.trim();
     if (!text || this.isLoading()) return;
 
-    // Build the history from the conversation so far – BEFORE we push the new
-    // user message – so the backend receives all prior turns without the new one.
-    const history = this.buildHistory();
+    // Prior turns for the backend (text + tool calls/responses), excluding the new message.
+    const history = this.conversationHistory();
 
     this.inputText = '';
     this.pushMessage({ role: 'user', contentType: 'text', text, timestamp: new Date() });
@@ -77,7 +86,10 @@ export class AgentChatWidgetComponent {
     this.scrollToBottom();
 
     this.chatService.sendMessage(text, history).subscribe({
-      next: ({ reply, toolResults }) => {
+      next: ({ reply, toolResults, historyTurns }) => {
+        if (historyTurns?.length) {
+          this.conversationHistory.update((h) => [...h, ...historyTurns]);
+        }
         if (reply?.trim()) {
           this.pushMessage({
             role: 'agent',
@@ -193,7 +205,7 @@ export class AgentChatWidgetComponent {
       eventDate: o.eventDate ?? '',
       address: o.address ?? '',
       totalPrice: o.totalPrice ?? 0,
-      isApproved: !!o.isApproved,
+      paymentStatus: o.paymentStatus ?? ORDER_STATUS_PENDING,
     };
   }
 
@@ -204,22 +216,7 @@ export class AgentChatWidgetComponent {
   }
 
   orderStatus(order: OrderCard): string {
-    return order.isApproved ? 'מאושרת' : 'ממתינה לאישור';
-  }
-
-  /**
-   * Converts the local message list into the history shape the backend expects.
-   * Only text turns carry conversational content – card messages (dishes,
-   * packages, orders) have no text and are skipped. Roles are mapped from the
-   * UI's 'agent' to the model's 'model'.
-   */
-  private buildHistory(): ChatTurn[] {
-    return this.messages()
-      .filter((m) => m.contentType === 'text' && !!m.text?.trim())
-      .map((m) => ({
-        role: m.role === 'user' ? 'user' : 'model',
-        text: m.text as string,
-      }));
+    return isOrderApproved(order) ? ORDER_STATUS_APPROVED : ORDER_STATUS_PENDING;
   }
 
   private chatErrorMessage(err: { status?: number; error?: { message?: string } }): string {

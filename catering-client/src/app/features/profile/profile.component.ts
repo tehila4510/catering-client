@@ -10,7 +10,7 @@ import { forkJoin } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { User } from '../../core/models/user.model';
-import { Order, CustomerUpdateOrderDto, orderStatusLabel } from '../../core/models/order.model';
+import { Order, CustomerUpdateOrderDto, isOrderApproved, orderStatusLabel, ORDER_STATUS_APPROVED } from '../../core/models/order.model';
 import { Package } from '../../core/models/package.model';
 import { Dish } from '../../core/models/dish.model';
 import { Review } from '../../core/models/review.model';
@@ -24,6 +24,7 @@ import {
   ReviewFormComponent,
   ReviewFormValue,
 } from '../../shared/components/review-form/review-form.component';
+import { PaypalPaymentComponent } from '../../shared/components/paypal-payment/paypal-payment.component';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -61,10 +62,16 @@ interface ReviewModalState {
   existing: Review | null;
 }
 
+interface PaymentModalState {
+  orderId: string;
+  packageName: string;
+  totalPrice: number;
+}
+
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [DatePipe, FormsModule, ReviewFormComponent],
+  imports: [DatePipe, FormsModule, ReviewFormComponent, PaypalPaymentComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
 })
@@ -79,6 +86,8 @@ export class ProfileComponent implements OnInit {
   private toast = inject(ToastService);
   private destroyRef = inject(DestroyRef);
 
+  readonly isOrderApproved = isOrderApproved;
+
   user = signal<User | null>(null);
   orders = signal<Order[]>([]);
   ordersLoading = signal(true);
@@ -86,6 +95,8 @@ export class ProfileComponent implements OnInit {
   myReviews = signal<Review[]>([]);
   reviewModal = signal<ReviewModalState | null>(null);
   reviewSaving = signal(false);
+
+  paymentModal = signal<PaymentModalState | null>(null);
 
   packages = signal<Package[]>([]);
   allDishes = signal<Dish[]>([]);
@@ -239,7 +250,7 @@ export class ProfileComponent implements OnInit {
   }
 
   canCancel(order: Order): boolean {
-    if (order.isApproved) return false;
+    if (isOrderApproved(order)) return false;
     if (!order.eventDate) return false;
 
     const event = new Date(order.eventDate);
@@ -254,7 +265,36 @@ export class ProfileComponent implements OnInit {
   }
 
   canEdit(order: Order): boolean {
-    return !order.isApproved;
+    return !isOrderApproved(order);
+  }
+
+  canPay(order: Order): boolean {
+    return !isOrderApproved(order);
+  }
+
+  openPayment(order: Order): void {
+    this.paymentModal.set({
+      orderId: order.id,
+      packageName: order.packageName,
+      totalPrice: order.totalPrice,
+    });
+  }
+
+  closePayment(): void {
+    this.paymentModal.set(null);
+  }
+
+  onOrderPaymentSuccess(): void {
+    const state = this.paymentModal();
+    if (!state) return;
+
+    this.orders.update((list) =>
+      list.map((o) =>
+        o.id === state.orderId ? { ...o, paymentStatus: ORDER_STATUS_APPROVED } : o,
+      ),
+    );
+    this.closePayment();
+    this.toast.show('התשלום בוצע בהצלחה! ההזמנה אושרה', 'success');
   }
 
   cancelOrder(order: Order): void {
