@@ -141,6 +141,7 @@ interface CategoryGroup {
                   id="eventDate"
                   name="eventDate"
                   type="date"
+                  [min]="todayDateString"
                   [(ngModel)]="eventDate"
                   (ngModelChange)="onDateChange($event)"
                   required
@@ -256,6 +257,9 @@ export class OrderFormComponent implements OnInit {
   checkingDate = signal(false);
   dateError = signal('');
 
+  // Today's date as a local YYYY-MM-DD string, used to block past dates in the picker.
+  readonly todayDateString = this.getTodayDateString();
+
   // Payment state (step 3).
   createdOrderId = signal('');
   paypalLoading = signal(false);
@@ -342,6 +346,12 @@ export class OrderFormComponent implements OnInit {
     this.dateError.set('');
     if (!date) return;
 
+    // Reject past dates before hitting the server for the per-day availability check.
+    if (date < this.todayDateString) {
+      this.dateError.set('לא ניתן לבחור תאריך שעבר');
+      return;
+    }
+
     this.checkingDate.set(true);
     this.orderService.getCountByDate(date).subscribe({
       next: (count) => {
@@ -354,6 +364,15 @@ export class OrderFormComponent implements OnInit {
     });
   }
 
+  // Returns today's date as a local YYYY-MM-DD string (avoids UTC off-by-one).
+  private getTodayDateString(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = `${now.getMonth() + 1}`.padStart(2, '0');
+    const day = `${now.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   onSubmit(): void {
     const p = this.pkg();
     if (!p) return;
@@ -363,6 +382,12 @@ export class OrderFormComponent implements OnInit {
 
     if (Number(this.numberOfGuests) < 1 || !this.eventDate || !this.address.trim()) {
       this.error.set('יש למלא את כל השדות');
+      return;
+    }
+
+    // Defensive client-side check in case the picker's [min] was bypassed.
+    if (this.eventDate < this.todayDateString) {
+      this.dateError.set('לא ניתן לבחור תאריך שעבר');
       return;
     }
 
