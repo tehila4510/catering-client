@@ -10,15 +10,22 @@ export interface ToolResult {
   data: any[];
 }
 
+export interface ChatTurnPart {
+  text?: string;
+  functionCall?: { name: string; args?: Record<string, unknown> };
+  functionResponse?: { name: string; response: { result: unknown } };
+}
+
 /** A single prior turn in the conversation, in the shape the backend expects. */
 export interface ChatTurn {
-  role: 'user' | 'model';
-  text: string;
+  role: 'user' | 'model' | 'function';
+  text?: string;
+  parts?: ChatTurnPart[];
 }
 
 export interface AgentChatApiResponse {
   success: boolean;
-  data: { reply: string; toolResults: ToolResult[] };
+  data: { reply: string; toolResults: ToolResult[]; historyTurns?: ChatTurn[] };
   message: string;
 }
 
@@ -51,7 +58,7 @@ export class AgentChatService {
   sendMessage(
     message: string,
     history: ChatTurn[] = []
-  ): Observable<{ reply: string; toolResults: ToolResult[] }> {
+  ): Observable<{ reply: string; toolResults: ToolResult[]; historyTurns?: ChatTurn[] }> {
     return this.http
       .post<AgentChatApiResponse>(`${this.apiUrl}/chat`, { message, history })
       .pipe(map((res) => res.data));
