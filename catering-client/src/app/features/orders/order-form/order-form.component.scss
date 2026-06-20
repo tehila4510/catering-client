@@ -129,6 +129,37 @@
   }
 }
 
+// --- Step 3: payment ---
+.payment-step {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pay-hint {
+  color: $white-dim;
+  font-size: 0.95rem;
+}
+
+.success-msg {
+  color: $gold;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 1rem;
+  border: 1px solid rgba($gold, 0.4);
+  border-radius: $radius-sm;
+}
+
+#paypal-button-container {
+  // PayPal renders its own iframe/buttons here; give it room and a light backdrop
+  // so the branded buttons stay readable on the dark theme.
+  background: #fff;
+  border-radius: $radius-sm;
+  padding: 0.75rem;
+  min-height: 50px;
+}
+
 // --- Step 1: dish selection ---
 .dish-step {
   display: flex;

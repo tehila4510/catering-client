@@ -13,7 +13,7 @@ import { Dish } from '../../core/models/dish.model';
 import { Package } from '../../core/models/package.model';
 import { DishCardComponent } from '../components/dish-card/dish-card.component';
 import { PackageCardComponent } from '../components/package-card/package-card.component';
-import { AgentChatService, ToolResult } from './agent-chat.service';
+import { AgentChatService, ChatTurn, ToolResult } from './agent-chat.service';
 
 type MessageContentType = 'text' | 'cards';
 type CardKind = 'dishes' | 'packages' | 'orders';
@@ -80,12 +80,16 @@ export class AgentChatWidgetComponent implements AfterViewInit {
     const text = this.inputText.trim();
     if (!text || this.isLoading()) return;
 
+    // Build the history from the conversation so far – BEFORE we push the new
+    // user message – so the backend receives all prior turns without the new one.
+    const history = this.buildHistory();
+
     this.inputText = '';
     this.pushMessage({ role: 'user', contentType: 'text', text, timestamp: new Date() });
     this.isLoading.set(true);
     this.scrollToBottom();
 
-    this.chatService.sendMessage(text).subscribe({
+    this.chatService.sendMessage(text, history).subscribe({
       next: ({ reply, toolResults }) => {
         // #region agent log
         fetch('http://127.0.0.1:7472/ingest/1efcf1af-9ffc-46cb-be5f-a6ada37ad3ff',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b9e9ae'},body:JSON.stringify({sessionId:'b9e9ae',hypothesisId:'H5',location:'agent-chat-widget.component.ts:next',message:'chat success',data:{replyLen:reply?.length||0,toolResultsCount:toolResults?.length||0},timestamp:Date.now()})}).catch((err)=>console.error('[AgentChat] sendMessage failed:', err));
@@ -220,6 +224,21 @@ export class AgentChatWidgetComponent implements AfterViewInit {
 
   orderStatus(order: OrderCard): string {
     return order.isApproved ? 'מאושרת' : 'ממתינה לאישור';
+  }
+
+  /**
+   * Converts the local message list into the history shape the backend expects.
+   * Only text turns carry conversational content – card messages (dishes,
+   * packages, orders) have no text and are skipped. Roles are mapped from the
+   * UI's 'agent' to the model's 'model'.
+   */
+  private buildHistory(): ChatTurn[] {
+    return this.messages()
+      .filter((m) => m.contentType === 'text' && !!m.text?.trim())
+      .map((m) => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        text: m.text as string,
+      }));
   }
 
   private pushMessage(msg: ChatMessage): void {

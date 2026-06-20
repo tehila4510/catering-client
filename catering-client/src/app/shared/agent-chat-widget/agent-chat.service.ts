@@ -10,6 +10,12 @@ export interface ToolResult {
   data: any[];
 }
 
+/** A single prior turn in the conversation, in the shape the backend expects. */
+export interface ChatTurn {
+  role: 'user' | 'model';
+  text: string;
+}
+
 export interface AgentChatApiResponse {
   success: boolean;
   data: { reply: string; toolResults: ToolResult[] };
@@ -36,9 +42,18 @@ export class AgentChatService {
     this.isOpen.set(false);
   }
 
-  sendMessage(message: string): Observable<{ reply: string; toolResults: ToolResult[] }> {
+  /**
+   * שולח הודעה חדשה יחד עם כל היסטוריית השיחה הקודמת, כדי שהסוכן יזכור
+   * פרטים מתורות קודמים (חבילה, מספר אורחים, תאריך, כתובת, מנות).
+   * @param message ההודעה החדשה של המשתמש.
+   * @param history כל התורות הקודמים, *ללא* ההודעה החדשה.
+   */
+  sendMessage(
+    message: string,
+    history: ChatTurn[] = []
+  ): Observable<{ reply: string; toolResults: ToolResult[] }> {
     return this.http
-      .post<AgentChatApiResponse>(`${this.apiUrl}/chat`, { message })
+      .post<AgentChatApiResponse>(`${this.apiUrl}/chat`, { message, history })
       .pipe(map((res) => res.data));
   }
 }
