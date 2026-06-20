@@ -78,6 +78,13 @@
                 </div>
               </div>
               <div class="order-card-actions">
+                @if (canPay(order)) {
+                  <button
+                    class="btn-pay"
+                    (click)="openPayment(order)"
+                    aria-label="המשך לתשלום"
+                  >המשך לתשלום</button>
+                }
                 @if (canEdit(order)) {
                   <button
                     class="btn-edit-order"
@@ -110,6 +117,42 @@
     </div>
   </div>
 </div>
+
+<!-- Payment Modal -->
+@if (paymentModal(); as pay) {
+  <div
+    class="modal-overlay"
+    role="button"
+    tabindex="0"
+    (click)="closePayment()"
+    (keydown.escape)="closePayment()"
+  >
+    <div
+      class="modal-box"
+      role="presentation"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <h2 class="modal-title">תשלום עבור הזמנה</h2>
+      @if (pay.packageName) {
+        <p class="modal-subtitle">{{ pay.packageName }}</p>
+      }
+      <p class="total-estimate">
+        <span class="total-label">סה״כ לתשלום:</span>
+        <span class="gold-text">₪{{ pay.totalPrice }}</span>
+      </p>
+
+      <app-paypal-payment
+        [orderId]="pay.orderId"
+        (paymentSuccess)="onOrderPaymentSuccess()"
+      />
+
+      <div class="step-actions">
+        <button type="button" class="btn-secondary" (click)="closePayment()">סגור</button>
+      </div>
+    </div>
+  </div>
+}
 
 <!-- Edit Personal Details Modal -->
 @if (profileEdit(); as p) {
