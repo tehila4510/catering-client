@@ -53,6 +53,20 @@ import { ToastService } from '../../../core/services/toast.service';
             </div>
 
             <div class="form-group">
+              <label for="pkg-minGuests">מינימום אורחים *</label>
+              <input
+                id="pkg-minGuests"
+                name="minGuests"
+                type="number"
+                [(ngModel)]="formData.minGuests"
+                required
+                min="1"
+                placeholder="1"
+              />
+              <span class="limit-hint">מספר האורחים המינימלי להזמנת חבילה זו</span>
+            </div>
+
+            <div class="form-group">
               <label for="pkg-imageUrl">קישור לתמונה (אופציונלי)</label>
                 <input
                   id="pkg-imageUrl"
@@ -119,12 +133,14 @@ export class PackageFormComponent implements OnInit {
     name: string;
     description: string;
     pricePerPerson: number;
+    minGuests: number;
     imageUrl: string;
     limits: PackageLimits;
   } = {
     name: '',
     description: '',
     pricePerPerson: 0,
+    minGuests: 1,
     imageUrl: '',
     limits: this.emptyLimits(),
   };
@@ -135,6 +151,7 @@ export class PackageFormComponent implements OnInit {
         name: this.pkg.name,
         description: this.pkg.description,
         pricePerPerson: this.pkg.pricePerPerson,
+        minGuests: this.pkg.minGuests ?? 1,
         imageUrl: this.pkg.imageUrl ?? '',
         limits: { ...this.emptyLimits(), ...this.pkg.limits },
       };
@@ -160,6 +177,7 @@ export class PackageFormComponent implements OnInit {
       name: this.formData.name,
       description: this.formData.description,
       pricePerPerson: Number(this.formData.pricePerPerson),
+      minGuests: Number(this.formData.minGuests) || 1,
       limits: this.normalizeLimits(this.formData.limits),
     };
     if (this.formData.imageUrl) payload.imageUrl = this.formData.imageUrl;

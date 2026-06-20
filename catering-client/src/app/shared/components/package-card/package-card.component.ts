@@ -22,6 +22,7 @@ import { Package } from '../../../core/models/package.model';
           <h3>{{ pkg.name }}</h3>
           <p class="description">{{ pkg.description }}</p>
           <p class="price gold-text">₪{{ pkg.pricePerPerson }} <span class="per-person">לאדם</span></p>
+          <p class="min-guests">מינימום {{ pkg.minGuests }} אורחים</p>
           <div class="card-actions">
             <a class="btn-secondary btn-sm" [routerLink]="['/packages', pkg.id]">פרטים</a>
             @if (isAdmin) {

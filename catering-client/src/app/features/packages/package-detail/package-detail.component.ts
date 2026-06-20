@@ -60,6 +60,7 @@ interface LimitRow {
             <span class="label-caps">מחיר לאדם</span>
             <span class="price gold-text">₪{{ p.pricePerPerson }}</span>
           </p>
+          <p class="min-guests label-caps">מינימום {{ p.minGuests }} אורחים</p>
 
           <div class="order-actions">
             <button type="button" class="btn-primary" (click)="onOrder(p.id)">

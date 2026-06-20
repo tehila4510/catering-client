@@ -251,11 +251,12 @@ interface OrderEditModel {
                     id="ord-guests"
                     name="guests"
                     type="number"
-                    min="1"
+                    [min]="editMinGuests()"
                     [ngModel]="editModel().numberOfGuests"
                     (ngModelChange)="patchEdit({ numberOfGuests: +$event })"
                     required
                   />
+                  <span class="date-hint">מינימום {{ editMinGuests() }} אורחים</span>
                 </div>
                 <div class="form-group">
                   <label for="ord-date">תאריך אירוע</label>
@@ -387,6 +388,12 @@ export class AdminCustomersComponent implements OnInit {
     const pkg = this.packages().find((p) => p.id === m.packageId);
     if (!pkg) return 0;
     return pkg.pricePerPerson * (Number(m.numberOfGuests) || 0);
+  });
+
+  editMinGuests = computed<number>(() => {
+    const m = this.editModel();
+    const pkg = this.packages().find((p) => p.id === m.packageId);
+    return pkg?.minGuests ?? 1;
   });
 
   ngOnInit(): void {
@@ -543,8 +550,14 @@ export class AdminCustomersComponent implements OnInit {
     if (this.editCheckingDate()) return;
     if (this.editDateError()) return;
 
-    this.saving.set(true);
     const m = this.editModel();
+    const min = this.editMinGuests();
+    if (Number(m.numberOfGuests) < min) {
+      this.toast.show(`מספר האורחים חייב להיות לפחות ${min} לחבילה זו`, 'error');
+      return;
+    }
+
+    this.saving.set(true);
     const dto: UpdateOrderDto = {
       packageId: m.packageId,
       selectedItems: m.selectedItems,

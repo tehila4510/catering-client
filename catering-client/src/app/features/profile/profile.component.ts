@@ -127,6 +127,13 @@ export class ProfileComponent implements OnInit {
     return pkg.pricePerPerson * (Number(state.numberOfGuests) || 0);
   });
 
+  editMinGuests = computed<number>(() => {
+    const state = this.editState();
+    if (!state) return 1;
+    const pkg = this.packages().find((p) => p.id === state.packageId);
+    return pkg?.minGuests ?? 1;
+  });
+
   editSelectionComplete = computed<boolean>(() => {
     const cats = this.editCategories();
     if (!cats.length) return true;
@@ -405,8 +412,14 @@ export class ProfileComponent implements OnInit {
     if (this.editCheckingDate()) return;
     if (this.editDateError()) return;
 
-    if (!state.numberOfGuests || Number(state.numberOfGuests) < 1 || !state.eventDate || !state.address.trim()) {
+    if (!state.numberOfGuests || !state.eventDate || !state.address.trim()) {
       this.editError.set('יש למלא את כל השדות');
+      return;
+    }
+
+    const min = this.editMinGuests();
+    if (Number(state.numberOfGuests) < min) {
+      this.editError.set(`מספר האורחים חייב להיות לפחות ${min} לחבילה זו`);
       return;
     }
 

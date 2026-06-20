@@ -128,11 +128,12 @@ interface CategoryGroup {
                   id="guests"
                   name="guests"
                   type="number"
-                  min="1"
+                  [min]="minGuests()"
                   [(ngModel)]="numberOfGuests"
                   required
-                  placeholder="0"
+                  [placeholder]="minGuests().toString()"
                 />
+                <span class="date-hint">מינימום {{ minGuests() }} אורחים לחבילה זו</span>
               </div>
 
               <div class="form-group">
@@ -268,6 +269,8 @@ export class OrderFormComponent implements OnInit {
   paymentSuccess = signal(false);
   private paypalRendered = false;
 
+  minGuests = computed(() => this.pkg()?.minGuests ?? 1);
+
   categories = computed<CategoryGroup[]>(() => {
     const p = this.pkg();
     if (!p?.limits) return [];
@@ -325,7 +328,11 @@ export class OrderFormComponent implements OnInit {
       dishes: this.dishService.getAll(),
     }).subscribe({
       next: ({ packages, dishes }) => {
-        this.pkg.set(packages.find((p) => p.id === this.packageId()) ?? null);
+        const found = packages.find((p) => p.id === this.packageId()) ?? null;
+        this.pkg.set(found);
+        if (found) {
+          this.numberOfGuests = found.minGuests ?? 1;
+        }
         this.allDishes.set(dishes);
         this.loading.set(false);
       },
@@ -380,8 +387,17 @@ export class OrderFormComponent implements OnInit {
     if (this.dateError()) return;
     if (this.checkingDate()) return;
 
-    if (Number(this.numberOfGuests) < 1 || !this.eventDate || !this.address.trim()) {
-      this.error.set('יש למלא את כל השדות');
+    const min = this.minGuests();
+    if (
+      Number(this.numberOfGuests) < min ||
+      !this.eventDate ||
+      !this.address.trim()
+    ) {
+      this.error.set(
+        Number(this.numberOfGuests) < min
+          ? `מספר האורחים חייב להיות לפחות ${min} לחבילה זו`
+          : 'יש למלא את כל השדות',
+      );
       return;
     }
 

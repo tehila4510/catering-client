@@ -19,6 +19,7 @@ interface PackageApi {
   name?: string;
   description?: string;
   pricePerPerson?: number;
+  minGuests?: number;
   limits?: Partial<PackageLimits>;
   featured?: boolean;
   imageUrl?: string;
@@ -71,6 +72,7 @@ export class PackageService {
       name: p.packageName ?? p.name ?? '',
       description: p.description ?? '',
       pricePerPerson: p.pricePerPerson ?? 0,
+      minGuests: p.minGuests ?? 1,
       limits: { ...this.emptyLimits(), ...(p.limits ?? {}) } as PackageLimits,
       featured: p.featured ?? false,
       imageUrl: p.imageUrl,
@@ -83,6 +85,7 @@ export class PackageService {
     if (p.description !== undefined) body['description'] = p.description;
     if (p.imageUrl !== undefined) body['imageUrl'] = p.imageUrl;
     if (p.pricePerPerson !== undefined) body['pricePerPerson'] = p.pricePerPerson;
+    if (p.minGuests !== undefined) body['minGuests'] = p.minGuests;
     if (p.limits !== undefined) body['limits'] = p.limits;
     if (p.featured !== undefined) body['featured'] = p.featured;
     if (p.imageUrl !== undefined) body['imageUrl'] = p.imageUrl;

@@ -12,6 +12,7 @@ export interface Package {
   name: string;
   description: string;
   pricePerPerson: number;
+  minGuests: number;
   limits: PackageLimits;
   featured?: boolean;
   imageUrl?: string;
