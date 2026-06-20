@@ -39,14 +39,14 @@
             <div class="cards-stack">
               @if (msg.cardKind === 'dishes') {
                 @for (dish of msg.dishes; track dish.id) {
-                  <div class="chat-card-wrap" (click)="chatService.close()">
+                  <div class="chat-card-wrap" role="button" tabindex="0" (click)="chatService.close()" (keydown.enter)="chatService.close()" (keydown.space)="chatService.close()">
                     <app-dish-card [dish]="dish" [isAdmin]="false" />
                   </div>
                 }
               }
               @if (msg.cardKind === 'packages') {
                 @for (pkg of msg.packages; track pkg.id) {
-                  <div class="chat-card-wrap" (click)="chatService.close()">
+                  <div class="chat-card-wrap" role="button" tabindex="0" (click)="chatService.close()" (keydown.enter)="chatService.close()" (keydown.space)="chatService.close()">
                     <app-package-card [pkg]="pkg" [isAdmin]="false" />
                   </div>
                 }
