@@ -105,6 +105,8 @@
                 <button
                   class="btn-review"
                   (click)="openReview(order)"
+                  [disabled]="!canReview(order)"
+                  [title]="!canReview(order) ? 'ניתן לכתוב חוות דעת רק לאחר ביצוע תשלום' : ''"
                   aria-label="חוות דעת על ההזמנה"
                 >
                   {{ reviewForOrder(order.id) ? '✎ עריכת חוות דעת' : '★ כתיבת חוות דעת' }}

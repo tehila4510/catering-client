@@ -313,9 +313,17 @@ $gray: #5c5c5c;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background-color: $gold;
     color: $black;
+  }
+
+  &:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    background-color: rgba($gold, 0.05);
+    color: rgba($gold, 0.45);
+    border-color: rgba($gold, 0.2);
   }
 }
 

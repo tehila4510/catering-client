@@ -158,7 +158,6 @@ interface OrderEditModel {
             } @else {
               <form (ngSubmit)="saveEdit()" class="edit-form">
 
-                <!-- Package selector -->
                 <div class="form-group">
                   <label for="ord-pkg">חבילה</label>
                   <select
@@ -174,7 +173,6 @@ interface OrderEditModel {
                   </select>
                 </div>
 
-                <!-- Dish selection by category -->
                 @if (editCategories().length > 0) {
                   <div class="dishes-section">
                     <h3 class="dishes-title">בחירת מנות</h3>
@@ -385,7 +383,6 @@ export class AdminOrdersComponent implements OnInit {
     address: '',
   };
 
-  // Signal so computed() tracks changes reactively.
   editModel = signal<OrderEditModel>({ ...this.emptyEdit });
 
   private readonly categoryOrder: { key: string; label: string }[] = [
@@ -408,7 +405,6 @@ export class AdminOrdersComponent implements OnInit {
       .filter((group) => group.dishes.length > 0);
   });
 
-  // Reactive: re-computes when editModel signal or packages/dishes signals change.
   editCategories = computed<CategoryGroup[]>(() => {
     const m = this.editModel();
     const pkg = this.packages().find((p) => p.id === m.packageId);
@@ -537,7 +533,6 @@ export class AdminOrdersComponent implements OnInit {
     this.editing.set(order);
     this.editLoadingDetails.set(true);
 
-    // Load the existing dish selection so checkboxes are pre-filled.
     this.orderService.getFullDetails(order.id).subscribe({
       next: (d) => {
         this.editModel.update((m) => ({

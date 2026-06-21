@@ -272,6 +272,10 @@ export class ProfileComponent implements OnInit {
     return !isOrderApproved(order);
   }
 
+  canReview(order: Order): boolean {
+    return isOrderApproved(order);
+  }
+
   openPayment(order: Order): void {
     this.paymentModal.set({
       orderId: order.id,

@@ -230,7 +230,6 @@ export class OrderFormComponent implements OnInit {
 
   step = signal<1 | 2 | 3>(1);
 
-  // Map of category key -> selected dish ids.
   selections = signal<Record<string, string[]>>({});
 
   numberOfGuests = 1;
